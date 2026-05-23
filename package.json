@@ -1,5 +1,5 @@
 {
-  "name": "@replyke/monorepo",
+  "name": "@agora/monorepo",
   "version": "7.0.3",
   "license": "Apache-2.0",
   "author": "Replyke, maintained by Yanay Tsabary",
@@ -29,11 +29,11 @@
   "private": false,
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "version:patch": "pnpm --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native version patch --no-git-tag-version",
-    "version:minor": "pnpm --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native version minor --no-git-tag-version",
-    "build-all": "pnpm --filter @replyke/core run build && pnpm --filter @replyke/react-js run build && pnpm --filter @replyke/react-native run build && pnpm --filter @replyke/expo run build",
-    "publish-prod": "pnpm --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native publish",
-    "publish-beta": "pnpm --filter @replyke/core --filter @replyke/expo --filter @replyke/react-js --filter @replyke/react-native publish --tag beta",
+    "version:patch": "pnpm --filter @agora/core --filter @agora/expo --filter @agora/react-js --filter @agora/react-native version patch --no-git-tag-version",
+    "version:minor": "pnpm --filter @agora/core --filter @agora/expo --filter @agora/react-js --filter @agora/react-native version minor --no-git-tag-version",
+    "build-all": "pnpm --filter @agora/core run build && pnpm --filter @agora/react-js run build && pnpm --filter @agora/react-native run build && pnpm --filter @agora/expo run build",
+    "publish-prod": "pnpm --filter @agora/core --filter @agora/expo --filter @agora/react-js --filter @agora/react-native publish",
+    "publish-beta": "pnpm --filter @agora/core --filter @agora/expo --filter @agora/react-js --filter @agora/react-native publish --tag beta",
     "publish-prod:patch": "pnpm version:patch && pnpm build-all && pnpm publish-prod",
     "publish-prod:minor": "pnpm version:minor && pnpm build-all && pnpm publish-prod",
     "publish-beta:patch": "pnpm version:patch && pnpm build-all && pnpm publish-beta",

@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
-import { useAccountSync, useProject, handleError } from "@replyke/core";
-import type { AccountStorage, AccountMap } from "@replyke/core";
+import { useAccountSync, useProject, handleError } from "@agora/core";
+import type { AccountStorage, AccountMap } from "@agora/core";
 
 const STORAGE_KEY_PREFIX = "replyke-accounts:";
 

@@ -7,9 +7,11 @@ import {
   setInitialized,
   selectAccessToken,
   requestNewAccessTokenThunk,
-} from "@replyke/core";
+  getApiBaseUrl,
+} from "@agora/core";
 
-const BASE_URL = "https://api.replyke.com/v7";
+// Env-driven base URL (defaults to the local Agora server); shared with @agora/core.
+const BASE_URL = getApiBaseUrl();
 
 export interface UseOAuthSignInReturn {
   /** Initiate OAuth sign-in / sign-up (unauthenticated). */

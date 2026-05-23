@@ -65,7 +65,7 @@ function getSocketUrl(): string {
   try {
     return new URL(BASE_URL).origin;
   } catch {
-    return "https://api.replyke.com";
+    return "http://localhost:4000";
   }
 }
 

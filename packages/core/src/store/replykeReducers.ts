@@ -16,7 +16,7 @@ import chatReducer from "./slices/chatSlice";
  *
  * @example
  * ```typescript
- * import { replykeReducers, replykeApiReducer, replykeMiddleware } from '@replyke/react-js';
+ * import { replykeReducers, replykeApiReducer, replykeMiddleware } from '@agora/react-js';
  *
  * const store = configureStore({
  *   reducer: {

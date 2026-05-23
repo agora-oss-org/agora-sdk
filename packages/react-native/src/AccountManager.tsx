@@ -1,6 +1,6 @@
 import * as Keychain from "react-native-keychain";
-import { useAccountSync, useProject, handleError } from "@replyke/core";
-import type { AccountStorage, AccountMap } from "@replyke/core";
+import { useAccountSync, useProject, handleError } from "@agora/core";
+import type { AccountStorage, AccountMap } from "@agora/core";
 
 const STORAGE_SERVICE_PREFIX = "replyke-accounts:";
 

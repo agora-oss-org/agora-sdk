@@ -1,8 +1,8 @@
 import React from "react";
-import { ReplykeProvider as OriginalReplykeProvider } from "@replyke/core";
+import { ReplykeProvider as OriginalReplykeProvider } from "@agora/core";
 
-// Re-export all exports from @replyke/core
-export * from "@replyke/core";
+// Re-export all exports from @agora/core
+export * from "@agora/core";
 import AccountManager from "./AccountManager";
 
 // Override ReplykeProvider

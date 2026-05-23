@@ -1,5 +1,5 @@
 {
-  "name": "@replyke/expo",
+  "name": "@agora/expo",
   "version": "7.0.3",
   "private": false,
   "license": "Apache-2.0",
@@ -45,7 +45,7 @@
   },
   "homepage": "https://docs.replyke.com",
   "dependencies": {
-    "@replyke/core": "workspace:*"
+    "@agora/core": "workspace:*"
   },
   "devDependencies": {
     "expo-secure-store": "^15.0.7"

@@ -8,7 +8,7 @@
  *   replykeReducers,
  *   replykeApiReducer,
  *   replykeMiddleware
- * } from '@replyke/react-js';
+ * } from '@agora/react-js';
  *
  * const store = configureStore({
  *   reducer: {

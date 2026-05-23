@@ -87,12 +87,12 @@ importers:
 
   packages/expo:
     dependencies:
+      '@agora/core':
+        specifier: workspace:*
+        version: link:../core
       '@reduxjs/toolkit':
         specifier: ^2.0.0
         version: 2.11.2(react-redux@9.2.0(@types/react@18.3.28)(react@19.2.3)(redux@5.0.1))(react@19.2.3)
-      '@replyke/core':
-        specifier: workspace:*
-        version: link:../core
       '@types/react':
         specifier: ^18.0.0 || ^19.0.0
         version: 18.3.28
@@ -115,12 +115,12 @@ importers:
 
   packages/react-js:
     dependencies:
+      '@agora/core':
+        specifier: workspace:*
+        version: link:../core
       '@reduxjs/toolkit':
         specifier: ^2.0.0
         version: 2.11.2(react-redux@9.2.0(@types/react@18.3.28)(react@19.2.3)(redux@5.0.1))(react@19.2.3)
-      '@replyke/core':
-        specifier: workspace:*
-        version: link:../core
       '@types/react':
         specifier: ^18.0.0 || ^19.0.0
         version: 18.3.28
@@ -136,12 +136,12 @@ importers:
 
   packages/react-native:
     dependencies:
+      '@agora/core':
+        specifier: workspace:*
+        version: link:../core
       '@reduxjs/toolkit':
         specifier: ^2.0.0
         version: 2.11.2(react-redux@9.2.0(@types/react@18.3.28)(react@19.2.3)(redux@5.0.1))(react@19.2.3)
-      '@replyke/core':
-        specifier: workspace:*
-        version: link:../core
       '@types/react':
         specifier: ^18.0.0 || ^19.0.0
         version: 18.3.28

@@ -1,5 +1,5 @@
 {
-  "name": "@replyke/react-native",
+  "name": "@agora/react-native",
   "version": "7.0.3",
   "private": false,
   "license": "Apache-2.0",
@@ -45,7 +45,7 @@
   },
   "homepage": "https://docs.replyke.com",
   "dependencies": {
-    "@replyke/core": "workspace:*"
+    "@agora/core": "workspace:*"
   },
   "devDependencies": {
     "react-native-keychain": "^9.2.2"
