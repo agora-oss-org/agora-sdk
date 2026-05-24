@@ -33,10 +33,15 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # --ignore-scripts skips the packages' `prepare` build hooks, which run
+        # out of dependency order on a clean install (dependents build before
+        # @agora-sdk/core's dist exists). We build explicitly via build-all instead.
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # build-all runs first: it builds @agora-sdk/core ahead of its dependents,
+      # so the root typecheck can resolve @agora-sdk/core's emitted declarations.
+      - name: Build all packages
+        run: pnpm run build-all
 
       - name: Typecheck
         run: pnpm run typecheck
-
-      - name: Build all packages
-        run: pnpm run build-all

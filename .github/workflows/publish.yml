@@ -1,13 +1,13 @@
 name: Publish
 
-# Publishes all @agora/* packages to npm when a version tag is pushed.
-# Versions are set manually in each package.json before tagging.
+# Publishes all @agora-sdk/* packages to npm when a version tag is pushed.
 #
-#   pnpm run version:patch          # or bump by hand
-#   git commit -am "release v7.0.4"
-#   git tag v7.0.4 && git push origin agora --tags
+# Cut a release with one command (bumps all packages, commits, tags, pushes):
 #
-# The tag (without the leading "v") must match @agora/core's version.
+#   pnpm run patch        # or: pnpm run minor / pnpm run major
+#
+# (see scripts/release.sh). The tag (without the leading "v") must match
+# @agora-sdk/core's version — the job verifies this below.
 
 on:
   push:
@@ -40,18 +40,19 @@ jobs:
           node-version: 22
           cache: pnpm
           registry-url: "https://registry.npmjs.org"
-          scope: "@agora"
+          scope: "@agora-sdk"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        # See ci.yml: skip prepare hooks, build explicitly in dependency order.
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Verify tag matches package version
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           PKG="$(node -p "require('./packages/core/package.json').version")"
-          echo "Tag version: $TAG | @agora/core version: $PKG"
+          echo "Tag version: $TAG | @agora-sdk/core version: $PKG"
           if [ "$TAG" != "$PKG" ]; then
-            echo "::error::Tag v$TAG does not match @agora/core version $PKG. Bump package.json versions before tagging."
+            echo "::error::Tag v$TAG does not match @agora-sdk/core version $PKG. Bump package.json versions before tagging."
             exit 1
           fi
 
@@ -61,10 +62,10 @@ jobs:
       - name: Publish to npm
         run: >-
           pnpm
-          --filter @agora/core
-          --filter @agora/react-js
-          --filter @agora/react-native
-          --filter @agora/expo
+          --filter @agora-sdk/core
+          --filter @agora-sdk/react-js
+          --filter @agora-sdk/react-native
+          --filter @agora-sdk/expo
           publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
