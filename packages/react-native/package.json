@@ -1,6 +1,6 @@
 {
   "name": "@agora-sdk/react-native",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": false,
   "license": "Apache-2.0",
   "author": "Replyke, maintained by Yanay Tsabary",
