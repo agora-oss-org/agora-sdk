@@ -87,7 +87,7 @@ importers:
 
   packages/expo:
     dependencies:
-      '@agora/core':
+      '@agora-sdk/core':
         specifier: workspace:*
         version: link:../core
       '@reduxjs/toolkit':
@@ -115,7 +115,7 @@ importers:
 
   packages/react-js:
     dependencies:
-      '@agora/core':
+      '@agora-sdk/core':
         specifier: workspace:*
         version: link:../core
       '@reduxjs/toolkit':
@@ -136,7 +136,7 @@ importers:
 
   packages/react-native:
     dependencies:
-      '@agora/core':
+      '@agora-sdk/core':
         specifier: workspace:*
         version: link:../core
       '@reduxjs/toolkit':

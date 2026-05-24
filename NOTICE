@@ -9,8 +9,8 @@ Modifications Copyright 2026 Jenova Marie
 
 This is a fork of the Replyke client modules (@replyke/*), modified to repoint the
 hardcoded API base URL (and chat socket origin) to a self-hosted, Replyke-compatible
-"Agora" backend, and re-scoped to @agora/*. The original code is the work of Replyke;
-the @agora packages are a derivative work and are NOT affiliated with, sponsored by,
+"Agora" backend, and re-scoped to @agora-sdk/*. The original code is the work of Replyke;
+the @agora-sdk packages are a derivative work and are NOT affiliated with, sponsored by,
 or endorsed by Replyke.
 
 ---

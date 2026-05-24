@@ -74,7 +74,7 @@ const AuthInitializer: React.FC<{
  *   replykeReducers,
  *   replykeApiReducer,
  *   replykeMiddleware
- * } from '@agora/react-js';
+ * } from '@agora-sdk/react-js';
  *
  * const store = configureStore({
  *   reducer: {

@@ -1,5 +1,5 @@
-import { useAccountSync, useProject, handleError } from "@agora/core";
-import type { AccountStorage, AccountMap } from "@agora/core";
+import { useAccountSync, useProject, handleError } from "@agora-sdk/core";
+import type { AccountStorage, AccountMap } from "@agora-sdk/core";
 
 const STORAGE_KEY_PREFIX = "replyke-accounts:";
 

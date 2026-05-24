@@ -13,9 +13,9 @@ import {
   selectAccessToken,
   requestNewAccessTokenThunk,
   getApiBaseUrl,
-} from "@agora/core";
+} from "@agora-sdk/core";
 
-// Env-driven base URL (defaults to the local Agora server); shared with @agora/core.
+// Env-driven base URL (defaults to the local Agora server); shared with @agora-sdk/core.
 const BASE_URL = getApiBaseUrl();
 
 export interface UseOAuthSignInReturn {

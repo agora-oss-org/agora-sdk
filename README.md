@@ -63,10 +63,10 @@ These libraries handle communication with the API and offer helpful abstractions
 
 | Package | Description |
 | ------- | ----------- |
-| `@agora/core` | Core hooks, context providers, and utilities for React and React Native |
-| `@agora/react-js` | React-specific implementations and re-exports from core |
-| `@agora/react-native` | React Native implementations with token management |
-| `@agora/expo` | Expo implementations with secure token storage |
+| `@agora-sdk/core` | Core hooks, context providers, and utilities for React and React Native |
+| `@agora-sdk/react-js` | React-specific implementations and re-exports from core |
+| `@agora-sdk/react-native` | React Native implementations with token management |
+| `@agora-sdk/expo` | Expo implementations with secure token storage |
 
 Internal packages use `workspace:*` for cross-references, and every package builds to both ESM (`dist/esm`) and CJS (`dist/cjs`).
 
@@ -80,7 +80,7 @@ To use this example:
 2. Provide a `projectId` and a signed token for your user. The `useSignTestingJwt` helper signs a JWT locally for development.
 
 ```bash
-pnpm add @agora/react-js
+pnpm add @agora-sdk/react-js
 ```
 
 > ⚠️ `useSignTestingJwt` signs a JWT with your project's secret key on the client. It is **meant only for development and testing**. Never expose private keys in production; sign tokens on your server instead.
@@ -93,7 +93,7 @@ import {
   EntityProvider,
   useEntity,
   useSignTestingJwt,
-} from "@agora/react-js";
+} from "@agora-sdk/react-js";
 import { useEffect, useState } from "react";
 
 const PROJECT_ID = import.meta.env.VITE_PUBLIC_PROJECT_ID;
@@ -140,7 +140,7 @@ function App() {
 export default App;
 ```
 
-> Note: the provider and hook names retain their upstream `Replyke*` identifiers in code; only the package scope is rebranded to `@agora/*`. UI components (e.g. a prebuilt comment section) are not part of this SDK fork - it ships the headless API and hooks layer.
+> Note: the provider and hook names retain their upstream `Replyke*` identifiers in code; only the package scope is rebranded to `@agora-sdk/*`. UI components (e.g. a prebuilt comment section) are not part of this SDK fork - it ships the headless API and hooks layer.
 
 ## Comparison With Alternatives
 
@@ -153,7 +153,7 @@ export default App;
 
 ## Documentation
 
-Agora's API surface mirrors upstream Replyke. Until Agora-specific docs are published, the upstream reference at [https://docs.replyke.com](https://docs.replyke.com) is the closest guide - keeping in mind that the package scope here is `@agora/*` and base URLs are driven by `getApiBaseUrl()`. See [SYNCING.md](SYNCING.md) for how this fork tracks upstream.
+Agora's API surface mirrors upstream Replyke. Until Agora-specific docs are published, the upstream reference at [https://docs.replyke.com](https://docs.replyke.com) is the closest guide - keeping in mind that the package scope here is `@agora-sdk/*` and base URLs are driven by `getApiBaseUrl()`. See [SYNCING.md](SYNCING.md) for how this fork tracks upstream.
 
 ## Contributing
 
@@ -170,7 +170,7 @@ This is a pnpm monorepo.
 ### Building
 
 - `pnpm run build-all` - builds all packages in dependency order
-- `pnpm --filter @agora/[package-name] run build` - build an individual package
+- `pnpm --filter @agora-sdk/[package-name] run build` - build an individual package
 
 ### Publishing
 
@@ -181,4 +181,4 @@ This is a pnpm monorepo.
 
 Licensed under [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
-This project is a fork of [Replyke](https://github.com/replyke/monorepo), repointed at an Agora server and rebranded to the `@agora/*` scope. See [SYNCING.md](SYNCING.md) for the upstream-merge workflow.
+This project is a fork of [Replyke](https://github.com/replyke/monorepo), repointed at an Agora server and rebranded to the `@agora-sdk/*` scope. See [SYNCING.md](SYNCING.md) for the upstream-merge workflow.
