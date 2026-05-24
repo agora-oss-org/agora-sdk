@@ -1,0 +1,70 @@
+name: Publish
+
+# Publishes all @agora/* packages to npm when a version tag is pushed.
+# Versions are set manually in each package.json before tagging.
+#
+#   pnpm run version:patch          # or bump by hand
+#   git commit -am "release v7.0.4"
+#   git tag v7.0.4 && git push origin agora --tags
+#
+# The tag (without the leading "v") must match @agora/core's version.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Build & publish to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+          scope: "@agora"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG="$(node -p "require('./packages/core/package.json').version")"
+          echo "Tag version: $TAG | @agora/core version: $PKG"
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag v$TAG does not match @agora/core version $PKG. Bump package.json versions before tagging."
+            exit 1
+          fi
+
+      - name: Build all packages
+        run: pnpm run build-all
+
+      - name: Publish to npm
+        run: >-
+          pnpm
+          --filter @agora/core
+          --filter @agora/react-js
+          --filter @agora/react-native
+          --filter @agora/expo
+          publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
