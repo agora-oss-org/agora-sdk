@@ -28,12 +28,14 @@ if [ -n "$(git status --porcelain)" ]; then
 fi
 
 # Bump all four published packages together (no per-package git tag — we tag once below).
+# `exec npm version` runs the bump inside each package dir; `pnpm ... version` would instead
+# look for a script named "version" and silently no-op.
 pnpm \
   --filter @agora-sdk/core \
   --filter @agora-sdk/expo \
   --filter @agora-sdk/react-js \
   --filter @agora-sdk/react-native \
-  version "$BUMP" --no-git-tag-version
+  exec npm version "$BUMP" --no-git-tag-version
 
 VERSION="$(node -p "require('./packages/core/package.json').version")"
 TAG="v$VERSION"
