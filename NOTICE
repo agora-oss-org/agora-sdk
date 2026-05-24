@@ -3,6 +3,18 @@ Copyright 2025 Replyke
 
 This product includes software developed by Replyke under the Apache License, Version 2.0.
 
+---
+
+Modifications Copyright 2026 Jenova Marie
+
+This is a fork of the Replyke client modules (@replyke/*), modified to repoint the
+hardcoded API base URL (and chat socket origin) to a self-hosted, Replyke-compatible
+"Agora" backend, and re-scoped to @agora/*. The original code is the work of Replyke;
+the @agora packages are a derivative work and are NOT affiliated with, sponsored by,
+or endorsed by Replyke.
+
+---
+
 Trademark Policy:
 "Replyke" and the Replyke logo are trademarks of Replyke. You may not use these trademarks, or any confusingly similar marks, in connection with your own products or services without prior written permission. This includes, but is not limited to, using the trademarks in advertising, promotional materials, or as part of your product names.
 

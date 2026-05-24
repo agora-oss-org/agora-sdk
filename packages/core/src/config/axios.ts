@@ -1,3 +1,8 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — repointed the hardcoded Replyke API
+// base URL to a self-hosted, Replyke-compatible Agora backend.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
+
 import axios from "axios";
 import { getApiBaseUrl } from "../utils/env";
 

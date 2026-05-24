@@ -1,3 +1,8 @@
+// Modified from the original @replyke/react-js source.
+// Modifications Copyright 2026 Jenova Marie — repointed the hardcoded Replyke OAuth
+// base URL to a self-hosted, Replyke-compatible Agora backend.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
+
 import { useCallback, useState } from "react";
 import {
   useProject,
