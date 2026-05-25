@@ -7,11 +7,20 @@ This product includes software developed by Replyke under the Apache License, Ve
 
 Modifications Copyright 2026 Jenova Marie
 
-This is a fork of the Replyke client modules (@replyke/*), modified to repoint the
-hardcoded API base URL (and chat socket origin) to a self-hosted, Replyke-compatible
-"Agora" backend, and re-scoped to @agora-sdk/*. The original code is the work of Replyke;
-the @agora-sdk packages are a derivative work and are NOT affiliated with, sponsored by,
-or endorsed by Replyke.
+This is a fork of the Replyke client modules (@replyke/*), modified to:
+
+  - repoint the hardcoded API base URL (and chat socket origin) to a self-hosted,
+    Replyke-compatible "Agora" backend;
+  - re-scope the packages from @replyke/* to @agora-sdk/*;
+  - change two auth flows (in files bearing a "Modified from original @replyke/core"
+    header): signUpWithEmailAndPassword now resolves to a SignUpResult
+    ({ status: "signed_in" | "confirmation_required" }) instead of void to surface the
+    email-confirmation flow, and sign-out now always clears local auth state even if the
+    server-side token revoke fails.
+
+The original code is the work of Replyke; the @agora-sdk packages are a derivative work
+and are NOT affiliated with, sponsored by, or endorsed by Replyke. See SYNCING.md for the
+full list of divergences and the upstream-merge workflow.
 
 ---
 

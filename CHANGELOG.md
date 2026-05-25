@@ -17,7 +17,12 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   or `{ status: "confirmation_required", email }`) instead of `void`. When the server reports
   email confirmation is required, the thunk no longer sets tokens/user — the caller shows a
   "check your email" state and the user signs in after confirming. Auto-confirm sign-ups behave
-  as before. New `SignUpResult` type exported from `@agora-sdk/core`.
+  as before. New `SignUpResult` type exported from `@agora-sdk/core`. (Divergence from upstream
+  Replyke — see SYNCING.md #3.)
+- **Sign-out always clears local auth state**, even if the server-side token revoke fails. A
+  stale/expired refresh token (server returns 401 from `requireAuth`-gated `/auth/sign-out`) must
+  not strand the user signed in locally, so the revoke error is swallowed and local state is
+  cleared regardless. (Divergence from upstream Replyke — see SYNCING.md #3.)
 
 ### Added
 
