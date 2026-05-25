@@ -11,6 +11,14 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Changed
+
+- **`signUpWithEmailAndPassword` now returns a `SignUpResult`** (`{ status: "signed_in", user }`
+  or `{ status: "confirmation_required", email }`) instead of `void`. When the server reports
+  email confirmation is required, the thunk no longer sets tokens/user — the caller shows a
+  "check your email" state and the user signs in after confirming. Auto-confirm sign-ups behave
+  as before. New `SignUpResult` type exported from `@agora-sdk/core`.
+
 ### Added
 
 - CI workflow (`.github/workflows/ci.yml`): install, build-all, then typecheck on
@@ -25,11 +33,19 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 - Rescoped all packages from `@replyke/*` to `@agora-sdk/*` (the `@agora` scope was
   unavailable). The mechanical rename lives in `rename-to-agora.sh`.
-- API base URL + chat socket origin are now **injected explicitly** via a new
-  `<ReplykeProvider baseUrl="https://host/v7">` prop and read **lazily per request**
-  (new `config/runtime.ts`; axios uses a request interceptor, RTK-Query a dynamic
-  baseQuery). The consuming app parses its own platform env and passes the value in.
+- **API base URL is now injected via a `baseUrl` prop** instead of auto-detected. The
+  consuming app parses its own platform env (Vite `import.meta.env`, CRA/RN
+  `process.env`, etc.) and passes the resolved value to `<ReplykeProvider baseUrl="https://host/v7">`
+  (also on `ReplykeIntegrationProvider`; the `@agora-sdk/react-js` wrapper forwards it).
   Defaults to `http://localhost:4000/v7` when omitted.
+  - New `config/runtime.ts` holds the value in a mutable singleton with
+    `setApiBaseUrl()` / `getApiBaseUrl()` / `getSocketUrl()`, set synchronously by the
+    provider on render (before any request fires).
+  - Everything now reads it **lazily, per request**, so the injected value always wins:
+    `config/axios.ts` stamps `baseURL` via a request interceptor (no more eager
+    `BASE_URL` constant); `store/api/baseApi.ts` uses a dynamic `fetchBaseQuery`
+    baseQuery; the chat socket origin (`context/chat-context.tsx`), `useAskContent`,
+    and the OAuth hook all resolve the URL at call time.
 - Rebranded `README.md` to Agora and documented the four shipped packages.
 
 ### Removed
@@ -46,5 +62,24 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   versions actually bump (the bare `pnpm ... version` form silently no-ops).
 - Quote-anchored the scope rename so Apache-2.0 attribution comments keep referencing
   the upstream `@replyke/*` origin while real imports still convert.
+- Added the Apache-2.0 attribution header to the remaining fork-modified files
+  (`authThunks.ts`, `hooks/auth/useAuth.ts`, `hooks/auth/index.ts`, `index.ts`,
+  `store/api/baseApi.ts`, `hooks/search/useAskContent.ts`).
+- **Sign-out now always clears the local session.** `signOutThunk` `await`ed the server
+  `POST /auth/sign-out` before clearing local auth state, so when that call failed (e.g. a
+  401 because the access token had expired and the refresh token was stale), the catch block
+  bailed out and the user stayed signed in — the "Sign out" button appeared dead. The
+  server-side token revoke is now best-effort: its failure is logged but local state
+  (`resetAuth` / `clearUserInUserSlice` / `resetApiState` / account removal) is always cleared.
+
+### Notes
+
+- Evaluated the `"Request new access token error: - Refresh token reuse detected"`
+  console noise seen on load and left it **unchanged**: the refresh flow
+  (`store/slices/authThunks.ts`, `config/useAxiosPrivate.ts`) is **stock upstream**,
+  not fork-modified, and the behavior is correct — it surfaces when a *stale* refresh
+  token (e.g. left in `localStorage` after repointing the same browser at a different
+  server) is replayed and the server's reuse-detection revokes the token family.
+  Clears on a storage reset. Not patched, to keep the fork cleanly mergeable upstream.
 
 [Unreleased]: https://github.com/jenova-marie/agora-sdk/commits/agora

@@ -12,6 +12,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Publishing
 - `pnpm run publish-prod` - Publishes all packages to production
 - `pnpm run publish-beta` - Publishes all packages with beta tag
+- Releases are cut with `pnpm run patch` / `minor` / `major` (bump → commit → tag → push); pushing the `v*` tag triggers the publish workflow.
+
+## Changelog
+
+This repo keeps a [`CHANGELOG.md`](CHANGELOG.md) in [Keep a Changelog](https://keepachangelog.com/) format.
+
+**You MUST keep it current.** After making any code, config, or build change, add a
+bullet under the `## [Unreleased]` section (in the appropriate `Added` / `Changed` /
+`Fixed` / `Removed` group) describing the change in the same commit. When a release is
+cut, the `[Unreleased]` entries are renamed to the new version and a fresh empty
+`[Unreleased]` section is started.
 
 ## Architecture Overview
 
