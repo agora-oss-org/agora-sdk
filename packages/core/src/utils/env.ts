@@ -72,40 +72,26 @@ export function isProduction(): boolean {
   return true;
 }
 
-/**
- * Get API base URL from environment variables
- * Supports both REACT_APP_ and VITE_ prefixes
- */
-export function getApiBaseUrl(): string {
-  // Check process.env (traditional React apps)
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/v7';
-  }
-
-  // Check Vite environment
-  const viteEnv = getViteEnv();
-  if (viteEnv) {
-    return viteEnv.VITE_API_BASE_URL || 'http://localhost:4000/v7';
-  }
-
-  // Fallback to default
-  return 'http://localhost:4000/v7';
-}
+// NOTE: the API base URL is NOT auto-detected from env anymore. The consuming app passes it
+// explicitly via <ReplykeProvider baseUrl={...}> and the SDK reads it from config/runtime.ts.
 
 /**
  * Get any environment variable with fallback
  * Tries both VITE_ and REACT_APP_ prefixes
  */
 export function getEnvVar(name: string, defaultValue: string = ''): string {
-  // Check process.env
-  if (typeof process !== 'undefined' && process.env) {
-    return process.env[`REACT_APP_${name}`] || process.env[`VITE_${name}`] || defaultValue;
-  }
+  // process.env (CRA / React Native) — fall through to Vite if the value is absent (see getApiBaseUrl).
+  const fromProcess =
+    typeof process !== 'undefined' && process.env
+      ? process.env[`REACT_APP_${name}`] || process.env[`VITE_${name}`]
+      : undefined;
+  if (fromProcess) return fromProcess;
 
-  // Check Vite environment
+  // Vite environment
   const viteEnv = getViteEnv();
   if (viteEnv) {
-    return viteEnv[`VITE_${name}`] || viteEnv[`REACT_APP_${name}`] || defaultValue;
+    const v = viteEnv[`VITE_${name}`] || viteEnv[`REACT_APP_${name}`];
+    if (v) return v;
   }
 
   return defaultValue;

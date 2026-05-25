@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getApiBaseUrl } from "../../utils/env";
+import { getApiBaseUrl } from "../../config/runtime";
 
 // Type for state that includes replyke namespace
 // Used by prepareHeaders to access auth token from namespaced state
@@ -11,32 +11,24 @@ interface StateWithReplyke {
   };
 }
 
-// Base query that uses the current project context and auth
-const createBaseQuery = () => {
-  return fetchBaseQuery({
-    baseUrl: getApiBaseUrl(),
-    prepareHeaders: (headers, { getState }) => {
-      // Add Content-Type header
-      headers.set('Content-Type', 'application/json');
-
-      // Get access token from namespaced Redux state
-      const state = getState() as StateWithReplyke;
-      const accessToken = state.replyke?.auth?.accessToken;
-
-      // Add Authorization header if we have a token
-      if (accessToken) {
-        headers.set('Authorization', `Bearer ${accessToken}`);
-      }
-
-      return headers;
-    },
-  });
+const prepareHeaders = (headers: Headers, { getState }: { getState: () => unknown }) => {
+  headers.set('Content-Type', 'application/json');
+  const state = getState() as StateWithReplyke;
+  const accessToken = state.replyke?.auth?.accessToken;
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+  return headers;
 };
+
+// Base URL is injected at runtime (config/runtime.ts), so resolve it per request rather than at
+// store-creation time: build fetchBaseQuery on each call with the current base URL. Typed as
+// fetchBaseQuery's own return so injected endpoints keep their request/response/meta inference.
+const dynamicBaseQuery: ReturnType<typeof fetchBaseQuery> = (args, api, extraOptions) =>
+  fetchBaseQuery({ baseUrl: getApiBaseUrl(), prepareHeaders })(args, api, extraOptions);
 
 // Create the base API slice
 export const baseApi = createApi({
   reducerPath: 'replykeApi',
-  baseQuery: createBaseQuery(),
+  baseQuery: dynamicBaseQuery,
   tagTypes: [
     'AppNotification',
     'Collection',

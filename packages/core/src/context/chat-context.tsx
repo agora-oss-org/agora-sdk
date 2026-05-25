@@ -18,7 +18,7 @@ import { selectAccessToken } from "../store/slices/authSlice";
 import { selectUser } from "../store/slices/userSlice";
 import { selectUser as selectAuthUser } from "../store/slices/authSlice";
 import useProject from "../hooks/projects/useProject";
-import { BASE_URL } from "../config/axios";
+import { getSocketUrl } from "../config/runtime";
 import type { ServerToClientEvents, ClientToServerEvents } from "../types/socket";
 import {
   upsertMessage,
@@ -62,16 +62,6 @@ export function useChatContext(): ChatContextValue {
 
 export interface ChatProviderProps {
   children: ReactNode;
-}
-
-/** Derive the socket.io server URL from the REST API base URL. */
-function getSocketUrl(): string {
-  // socket.io mounts at the origin; strip the path from BASE_URL
-  try {
-    return new URL(BASE_URL).origin;
-  } catch {
-    return "http://localhost:4000";
-  }
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {

@@ -7,9 +7,10 @@ export { default as getPublicFileUrl } from "./helpers/getPublicFileUrl";
 export {
   isDevelopment,
   isProduction,
-  getApiBaseUrl,
   getEnvVar,
 } from "./utils/env";
+// Runtime API base URL (set via <ReplykeProvider baseUrl>, read lazily per request).
+export { getApiBaseUrl, getSocketUrl } from "./config/runtime";
 
 // Constants
 export { reportReasons } from "./constants/reportReasons";

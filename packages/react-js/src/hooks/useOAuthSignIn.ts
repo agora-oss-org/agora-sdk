@@ -15,8 +15,7 @@ import {
   getApiBaseUrl,
 } from "@agora-sdk/core";
 
-// Env-driven base URL (defaults to the local Agora server); shared with @agora-sdk/core.
-const BASE_URL = getApiBaseUrl();
+// Base URL is injected at runtime (<ReplykeProvider baseUrl>), so read it at request time.
 
 export interface UseOAuthSignInReturn {
   /** Initiate OAuth sign-in / sign-up (unauthenticated). */
@@ -79,7 +78,7 @@ function useOAuthSignIn(): UseOAuthSignInReturn {
         }
 
         const response = await fetch(
-          `${BASE_URL}/${projectId}/oauth/${endpoint}`,
+          `${getApiBaseUrl()}/${projectId}/oauth/${endpoint}`,
           {
             method: "POST",
             headers,

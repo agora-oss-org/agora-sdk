@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import useProject from "../projects/useProject";
 import { useReplykeSelector } from "../../store/hooks";
 import { selectAccessToken } from "../../store/slices/authSlice";
-import { BASE_URL } from "../../config/axios";
+import { getApiBaseUrl } from "../../config/runtime";
 import { ContentSearchResult } from "./useSearchContent";
 
 export interface UseAskContentProps {
@@ -125,7 +125,7 @@ export default function useAskContent(): UseAskContentReturn {
       // Run async without blocking the render cycle — errors are surfaced via state
       (async () => {
         try {
-          const response = await fetch(`${BASE_URL}/${projectId}/search/ask`, {
+          const response = await fetch(`${getApiBaseUrl()}/${projectId}/search/ask`, {
             method: "POST",
             headers,
             body,

@@ -12,10 +12,12 @@ export { default as useOAuthSignIn, type UseOAuthSignInReturn } from "./hooks/us
 export const ReplykeProvider: React.FC<{
   projectId: string;
   signedToken?: string | null | undefined;
+  /** Agora server base URL incl. /v7 (e.g. https://host/v7). Defaults to http://localhost:4000/v7. */
+  baseUrl?: string;
   children: React.ReactNode;
-}> = ({ projectId, signedToken, children }) => {
+}> = ({ projectId, signedToken, baseUrl, children }) => {
   return (
-    <CoreReplykeProvider projectId={projectId} signedToken={signedToken}>
+    <CoreReplykeProvider projectId={projectId} signedToken={signedToken} baseUrl={baseUrl}>
       <>
         <AccountManager />
         {children}

@@ -9,11 +9,14 @@ import {
 import { selectInitialized } from "../store/slices/authSlice";
 import { ReplykeContext } from "./replyke-context";
 import useProjectData from "../hooks/projects/useProjectData";
+import { setApiBaseUrl } from "../config/runtime";
 
 export interface ReplykeIntegrationProviderProps {
   children: ReactNode;
   projectId: string;
   signedToken?: string | null;
+  /** Agora server base URL incl. /v7; defaults to http://localhost:4000/v7 when omitted. */
+  baseUrl?: string;
 }
 
 /**
@@ -100,7 +103,11 @@ export const ReplykeIntegrationProvider: React.FC<ReplykeIntegrationProviderProp
   children,
   projectId,
   signedToken,
+  baseUrl,
 }) => {
+  // Set the runtime base URL during render, before any hook fires a request.
+  setApiBaseUrl(baseUrl);
+
   // Provide projectId via context so hooks can access it
   const data = useProjectData({ projectId });
 
