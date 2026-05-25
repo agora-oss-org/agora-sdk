@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — signUpWithEmailAndPassword resolves to a
+// SignUpResult ({ status: "signed_in" | "confirmation_required" }) instead of void.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useCallback } from 'react';
 import { useReplykeDispatch, useReplykeSelector } from '../../store/hooks';
 import {
@@ -45,13 +49,22 @@ export interface ChangePasswordProps {
   newPassword: string;
 }
 
+/**
+ * Outcome of a sign-up. With email confirmation enabled the user is created but NOT signed in
+ * (`confirmation_required`) — they must click the emailed link, then sign in. With auto-confirm
+ * the user is signed in immediately (`signed_in`) and tokens are already in state.
+ */
+export type SignUpResult =
+  | { status: "signed_in"; user: any }
+  | { status: "confirmation_required"; email: string };
+
 // Define the interface to match the original useAuth hook
 export interface UseAuthValues {
   initialized: boolean;
   accessToken: string | null;
   refreshToken: string | null;
   setRefreshToken: React.Dispatch<React.SetStateAction<string | null>>;
-  signUpWithEmailAndPassword: (props: SignUpWithEmailAndPasswordProps) => Promise<void>;
+  signUpWithEmailAndPassword: (props: SignUpWithEmailAndPasswordProps) => Promise<SignUpResult>;
   signInWithEmailAndPassword: (props: SignInWithEmailAndPasswordProps) => Promise<void>;
   signOut: () => Promise<void>;
   changePassword: (props: ChangePasswordProps) => Promise<void>;
@@ -82,6 +95,8 @@ export default function useAuth(): UseAuthValues {
       if (signUpWithEmailAndPasswordThunk.rejected.match(result)) {
         throw new Error(result.payload as string);
       }
+
+      return result.payload as SignUpResult;
     },
     [dispatch, projectId]
   );

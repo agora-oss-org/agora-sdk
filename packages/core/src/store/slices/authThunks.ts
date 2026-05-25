@@ -1,3 +1,8 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — sign-out now always clears local auth
+// state even if the server revoke fails, and signUpWithEmailAndPassword returns a
+// SignUpResult instead of void to surface the email-confirmation flow.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../config/axios";
 
@@ -173,7 +178,14 @@ export const signUpWithEmailAndPasswordThunk = createAsyncThunk(
         data
       );
 
-      // Update auth state
+      // When email confirmation is enabled, sign-up succeeds but returns no session — the user
+      // must confirm via the emailed link, then sign in. Don't set tokens/user; hand the status
+      // back so the UI can show a "check your email" state.
+      if (result?.status === "confirmation_required") {
+        return { status: "confirmation_required", email: result.email } as const;
+      }
+
+      // Auto-confirm path: a full session came back, so the user is signed in immediately.
       dispatch(
         setTokens({
           accessToken: result.accessToken,
@@ -183,7 +195,7 @@ export const signUpWithEmailAndPasswordThunk = createAsyncThunk(
       dispatch(setUser(result.user));
       dispatch(setUserInUserSlice(result.user)); // Sync user to user slice
 
-      return result;
+      return { status: "signed_in", user: result.user } as const;
     } catch (error) {
       handleError(error, "Failed to register user with email and password:");
       return rejectWithValue(
@@ -249,7 +261,15 @@ export const signOutThunk = createAsyncThunk(
     try {
       dispatch(setAuthenticating(true));
 
-      await authService.signOut(data.projectId, refreshToken);
+      // Best-effort server-side revoke. Signing out must always succeed locally: if the access
+      // token has expired and can't be refreshed (e.g. a stale refresh token), the server's
+      // requireAuth-gated /auth/sign-out returns 401 — but that must not strand the user signed in.
+      // So we swallow the error here and always proceed to clear local state below.
+      try {
+        await authService.signOut(data.projectId, refreshToken);
+      } catch (error) {
+        handleError(error, "Server sign-out failed; clearing local session anyway:");
+      }
 
       // Remove current account from the multi-account map
       if (activeAccountId) {

@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — export the new SignUpResult type.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
+
 // Helpers & Utilities
 export { handleError } from "./utils/handleError";
 export { keywordHelpers } from "./utils/keywordHelpers";
@@ -62,6 +66,7 @@ export {
   type SignUpWithEmailAndPasswordProps,
   type SignInWithEmailAndPasswordProps,
   type ChangePasswordProps,
+  type SignUpResult,
   type RequestPasswordResetProps,
   type SendVerificationEmailProps,
   type VerifyEmailProps,
