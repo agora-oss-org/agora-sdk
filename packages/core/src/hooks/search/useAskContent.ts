@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — resolve the API base URL at call time
+// instead of from an eager constant.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useCallback, useEffect, useRef, useState } from "react";
 import useProject from "../projects/useProject";
 import { useReplykeSelector } from "../../store/hooks";

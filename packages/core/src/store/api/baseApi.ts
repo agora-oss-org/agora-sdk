@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — resolve the API base URL at request time
+// via a dynamic fetchBaseQuery so the injected baseUrl always wins.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getApiBaseUrl } from "../../config/runtime";
 
