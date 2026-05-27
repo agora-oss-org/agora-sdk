@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — widened EntityListSortByOptions with the Agora
+// ranking algorithms (decay, gravity, wilson, bayesian).
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 export type SortDirection = "asc" | "desc";
 
 export type SortType = "auto" | "numeric" | "text" | "boolean" | "timestamp";
@@ -9,6 +13,12 @@ export type EntityListSortByOptions =
   | "hot"
   | "new"
   | "controversial"
+  // Agora ranking algorithms (server lib/ranking.ts): true exponential half-life, HN gravity,
+  // Wilson confidence, Bayesian shrunk mean. Numeric tunables ride the optional `rankParams` scalar.
+  | "decay"
+  | "gravity"
+  | "wilson"
+  | "bayesian"
   | `metadata.${string}`;
 
 /**

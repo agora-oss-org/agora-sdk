@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — fetchEntities forwards the optional rankParams,
+// rankAnchor, and rerank query params for Agora's configurable feed ranking.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { baseApi } from "./baseApi";
 import type { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import type { Entity, EntityIncludeParam } from "../../interfaces/models/Entity";
@@ -93,6 +97,14 @@ interface FetchEntitiesParams {
   contentFilters?: ContentFilters | null;
   attachmentsFilters?: AttachmentsFilters | null;
 
+  // Agora ranking overrides (optional; ignored by stored algos). rankParams is a JSON-encoded
+  // string of numeric tunables (e.g. '{"halfLifeHours":12}'); rankAnchor pins the decay clock
+  // (echoed back as `rankAnchor` in the response) for stable pagination; rerank opts into the
+  // re-rank webhook when one is configured.
+  rankParams?: string | null;
+  rankAnchor?: string | null;
+  rerank?: boolean | null;
+
   // Configuration parameters
   sourceId?: string | null;
   spaceId?: string | null;
@@ -149,6 +161,9 @@ export const entityListsApi = baseApi.injectEndpoints({
         sortByReaction,
         sortDir,
         sortType,
+        rankParams,
+        rankAnchor,
+        rerank,
         timeFrame,
         sourceId,
         spaceId,
@@ -183,6 +198,9 @@ export const entityListsApi = baseApi.injectEndpoints({
             sortByReaction,
             sortDir,
             sortType,
+            rankParams,
+            rankAnchor,
+            rerank,
             timeFrame,
             keywordsFilters,
             metadataFilters,
