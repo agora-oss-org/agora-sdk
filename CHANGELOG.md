@@ -11,21 +11,20 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
-### Changed
+## [1.1.0] - 2026-05-26
 
-- **`signUpWithEmailAndPassword` now returns a `SignUpResult`** (`{ status: "signed_in", user }`
-  or `{ status: "confirmation_required", email }`) instead of `void`. When the server reports
-  email confirmation is required, the thunk no longer sets tokens/user — the caller shows a
-  "check your email" state and the user signs in after confirming. Auto-confirm sign-ups behave
-  as before. New `SignUpResult` type exported from `@agora-sdk/core`. (Divergence from upstream
-  Replyke — see SYNCING.md #3.)
-- **Sign-out always clears local auth state**, even if the server-side token revoke fails. A
-  stale/expired refresh token (server returns 401 from `requireAuth`-gated `/auth/sign-out`) must
-  not strand the user signed in locally, so the revoke error is swallowed and local state is
-  cleared regardless. (Divergence from upstream Replyke — see SYNCING.md #3.)
+First tagged release with a changelog; it captures the full divergence of the
+`@agora-sdk/*` fork from upstream Replyke (the untracked `1.0.1`–`1.0.3` patches
+are folded in here).
 
 ### Added
 
+- **Feed ranking algorithms.** `EntityListSortByOptions` widened with `"decay"` (true exponential
+  half-life), `"gravity"` (HN), `"wilson"` (confidence), `"bayesian"` (shrunk mean) — the existing
+  `top`/`hot`/`new`/`controversial`/`metadata.*` are unchanged. `fetchEntities` gained optional
+  pass-through scalars `rankParams` (JSON string of numeric tunables, e.g. `{"halfLifeHours":12}`),
+  `rankAnchor` (pins the decay clock across paginated requests; echoed back by the server), and
+  `rerank` (opt into the server's re-rank webhook). Additive + backward-compatible.
 - CI workflow (`.github/workflows/ci.yml`): install, build-all, then typecheck on
   pushes/PRs to `agora`.
 - Publish workflow (`.github/workflows/publish.yml`): on a `v*` tag, verify the tag
@@ -36,6 +35,12 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ### Changed
 
+- **`signUpWithEmailAndPassword` now returns a `SignUpResult`** (`{ status: "signed_in", user }`
+  or `{ status: "confirmation_required", email }`) instead of `void`. When the server reports
+  email confirmation is required, the thunk no longer sets tokens/user — the caller shows a
+  "check your email" state and the user signs in after confirming. Auto-confirm sign-ups behave
+  as before. New `SignUpResult` type exported from `@agora-sdk/core`. (Divergence from upstream
+  Replyke — see SYNCING.md #3.)
 - Rescoped all packages from `@replyke/*` to `@agora-sdk/*` (the `@agora` scope was
   unavailable). The mechanical rename lives in `rename-to-agora.sh`.
 - **API base URL is now injected via a `baseUrl` prop** instead of auto-detected. The
@@ -59,23 +64,25 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   longer sniffs `REACT_APP_API_BASE_URL` / `VITE_API_BASE_URL` (that path couldn't
   read `import.meta.env` reliably and was evaluated eagerly at import). It is now a
   runtime getter for the value set via `baseUrl`. **Breaking:** consumers relying on
-  env auto-detection must pass `baseUrl` to `ReplykeProvider`.
+  env auto-detection must pass `baseUrl` to `ReplykeProvider`. (Shipped in `1.0.2`.)
 
 ### Fixed
 
-- Release/version scripts now use `pnpm --filter ... exec npm version` so package
-  versions actually bump (the bare `pnpm ... version` form silently no-ops).
-- Quote-anchored the scope rename so Apache-2.0 attribution comments keep referencing
-  the upstream `@replyke/*` origin while real imports still convert.
-- Added the Apache-2.0 attribution header to the remaining fork-modified files
-  (`authThunks.ts`, `hooks/auth/useAuth.ts`, `hooks/auth/index.ts`, `index.ts`,
-  `store/api/baseApi.ts`, `hooks/search/useAskContent.ts`).
 - **Sign-out now always clears the local session.** `signOutThunk` `await`ed the server
   `POST /auth/sign-out` before clearing local auth state, so when that call failed (e.g. a
   401 because the access token had expired and the refresh token was stale), the catch block
   bailed out and the user stayed signed in — the "Sign out" button appeared dead. The
   server-side token revoke is now best-effort: its failure is logged but local state
   (`resetAuth` / `clearUserInUserSlice` / `resetApiState` / account removal) is always cleared.
+  (Divergence from upstream Replyke — see SYNCING.md #3.)
+- Release/version scripts now use `pnpm --filter ... exec npm version` so package
+  versions actually bump (the bare `pnpm ... version` form silently no-ops).
+- Quote-anchored the scope rename so Apache-2.0 attribution comments keep referencing
+  the upstream `@replyke/*` origin while real imports still convert.
+- Added the Apache-2.0 attribution header to the remaining fork-modified files
+  (`authThunks.ts`, `hooks/auth/useAuth.ts`, `hooks/auth/index.ts`, `index.ts`,
+  `store/api/baseApi.ts`, `hooks/search/useAskContent.ts`,
+  `interfaces/EntityListSortByOptions.ts`, `store/api/entityListsApi.ts`).
 
 ### Notes
 
@@ -87,4 +94,5 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   server) is replayed and the server's reuse-detection revokes the token family.
   Clears on a storage reset. Not patched, to keep the fork cleanly mergeable upstream.
 
-[Unreleased]: https://github.com/jenova-marie/agora-sdk/commits/agora
+[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.1.0...agora
+[1.1.0]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.1.0
