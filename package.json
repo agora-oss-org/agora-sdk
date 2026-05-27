@@ -1,10 +1,11 @@
 {
   "name": "@agora-sdk/monorepo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "Apache-2.0",
-  "author": "Replyke, maintained by Yanay Tsabary",
-  "description": "Replyke: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
+  "author": "Agora SDK, maintained by Jenova Marie",
+  "description": "Agora: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
   "keywords": [
+    "agora",
     "replyke",
     "social",
     "comments",
@@ -24,7 +25,7 @@
   "homepage": "https://replyke.com",
   "repository": {
     "type": "git",
-    "url": "https://github.com/replyke/monorepo.git"
+    "url": "https://github.com/jenova-marie/agora-sdk.git"
   },
   "private": false,
   "scripts": {
