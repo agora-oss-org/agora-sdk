@@ -1,3 +1,8 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — only persist an account once the access token's
+// `sub` matches the current user.id, preventing a corrupt account map (two ids sharing one
+// refresh token) during the transient token/user desync on OAuth sign-in.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useEffect, useRef } from "react";
 import { useReplykeDispatch, useReplykeSelector } from "../../store/hooks";
 import {
@@ -13,7 +18,7 @@ import {
   type AccountSummary,
   type AccountEntry,
 } from "../../store/slices/accountsSlice";
-import { selectRefreshToken, setRefreshToken } from "../../store/slices/authSlice";
+import { selectRefreshToken, setRefreshToken, selectAccessToken } from "../../store/slices/authSlice";
 import { selectUser } from "../../store/slices/userSlice";
 import { handleError } from "../../utils/handleError";
 import type { AccountStorage } from "../../interfaces/AccountStorage";
@@ -37,12 +42,25 @@ function extractExpFromJwt(jwt: string): number {
   }
 }
 
+// The access token's subject (the profile/user id it was minted for). Used to detect a transient
+// token/user desync before we persist an account entry.
+function extractSubFromJwt(jwt: string | null | undefined): string | null {
+  if (!jwt) return null;
+  try {
+    const payload = JSON.parse(base64UrlDecode(jwt.split(".")[1]));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function useAccountSync(
   storage: AccountStorage,
   projectId: string
 ): void {
   const dispatch = useReplykeDispatch();
   const refreshToken = useReplykeSelector(selectRefreshToken);
+  const accessToken = useReplykeSelector(selectAccessToken);
   const user = useReplykeSelector(selectUser); // from userSlice (canonical)
   const accounts = useReplykeSelector(selectAccounts);
   const activeAccountId = useReplykeSelector(selectActiveAccountId);
@@ -88,6 +106,17 @@ export default function useAccountSync(
   useEffect(() => {
     if (!isReady || !refreshToken || !user?.id) return;
 
+    // Guard against a transient token/user desync. The accounts map keys by user.id but stores the
+    // CURRENT auth refresh token, so if these are momentarily mismatched (classically: an OAuth
+    // callback sets the new tokens via setTokens, but the new user only resolves a tick later, so
+    // this effect fires with the new token while `user` is still the previous account) we'd write
+    // the OLD user's entry against the NEW token — producing two account ids that share one refresh
+    // token (a corrupt map that breaks switching and sign-out). The access token is a JWT whose
+    // `sub` is the id it was minted for; only persist once it matches the current user. When they
+    // disagree we skip and wait — the effect re-runs when the user (or token) catches up.
+    const sub = extractSubFromJwt(accessToken);
+    if (sub && sub !== user.id) return;
+
     const summary: AccountSummary = {
       id: user.id,
       name: user.name ?? null,
@@ -106,7 +135,7 @@ export default function useAccountSync(
     if (user.id !== activeAccountId) {
       dispatch(setActiveAccount(user.id));
     }
-  }, [refreshToken, user, isReady]);
+  }, [refreshToken, accessToken, user, isReady]);
 
   // Phase C: Persist map on changes
   useEffect(() => {
