@@ -22,7 +22,7 @@ upstream's improvements painless.
    `react-js/src/hooks/useOAuthSignIn.ts`. Everything else derives from `getApiBaseUrl()`.
 2. **`@replyke/*` → `@agora-sdk/*` rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
    (idempotent, re-runnable). Keeping it scripted is what makes upstream merges cheap.
-3. **Auth-flow behavior** — hand edits in 2 files, each marked with a `Modified from original
+3. **Auth-flow behavior** — hand edits in 3 files, each marked with a `Modified from original
    @replyke/core` header (Apache-2.0 §4(b)):
    - `core/src/store/slices/authThunks.ts` + `core/src/hooks/auth/useAuth.ts`:
      `signUpWithEmailAndPassword` resolves to a **`SignUpResult`** (`{ status: "signed_in" }` |
@@ -32,6 +32,9 @@ upstream's improvements painless.
    - `core/src/store/slices/authThunks.ts`: sign-out now **always clears local auth state** even
      if the server-side revoke fails (a stale/expired refresh token must not strand the user
      signed in).
+   - `core/src/hooks/auth/useAccountSync.ts`: only persist an account entry once the access
+     token's `sub` matches the current `user.id`, preventing a **corrupt account map** (two ids
+     sharing one refresh token) during the transient token/user desync on OAuth sign-in.
 
    Unlike #1 and #2, these are genuine behavioral forks from upstream and the **likely
    merge-conflict spots** if upstream refactors auth — re-apply them by hand, preserving upstream's

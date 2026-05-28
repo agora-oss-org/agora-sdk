@@ -11,6 +11,17 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Fixed
+- **Account map no longer corrupts on OAuth sign-in (duplicate entries sharing one refresh token).**
+  `useAccountSync` keys accounts by `user.id` but stores the *current* `auth.refreshToken`. The OAuth
+  callback (`useOAuthSignIn.handleOAuthCallback`) sets the new tokens synchronously but resolves the
+  new user a tick later (via `requestNewAccessTokenThunk`), so the persist effect fired with the
+  **new token while `user` was still the previous account** — writing the old user's entry against
+  the new token. Result: two account ids sharing one refresh token, which broke account switching and
+  made sign-out (the multi-account "switch to remaining account" path) unable to end the session.
+  Phase B now only persists an account when the **access token's `sub` matches the current `user.id`**
+  (skips and waits while they're transiently mismatched). (Divergence from upstream — see SYNCING.md.)
+
 ## [1.1.0] - 2026-05-26
 
 First tagged release with a changelog; it captures the full divergence of the
