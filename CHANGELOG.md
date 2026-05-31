@@ -25,6 +25,15 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   Community sections updated to actively welcome contributions and link the guide.
 
 ### Fixed
+- **Reactive token refresh now fires on access-token expiry.** The `useAxiosPrivate` response
+  interceptor (`core/src/config/useAxiosPrivate.ts`) keyed its refresh-and-retry on HTTP **403**,
+  but the Agora server returns **401** for an expired/invalid access token (it reserves 403 for
+  authorization denials like members-only spaces). So an expired token was never refreshed
+  reactively — requests failed until a full reload re-ran the boot-path refresh — and every genuine
+  403 uselessly pinged the refresh endpoint. The interceptor now triggers on **401**, which is the
+  spec-compliant trigger (RFC 9110 / RFC 6750). The file gains a `Modified from original
+  @replyke/core` header (it was previously stock upstream). **New divergence from upstream Replyke
+  — see SYNCING.md #3.** (Consumers using the published npm package must upgrade to get the fix.)
 - Corrected the README's API base URL docs, which still described the removed env-var
   auto-detection (`VITE_API_BASE_URL` / `REACT_APP_API_BASE_URL`). The Building Agora
   section, the Quick Start steps, and the `App.tsx` example now show the `baseUrl` prop on

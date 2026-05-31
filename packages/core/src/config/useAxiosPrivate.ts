@@ -1,3 +1,10 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — the reactive refresh interceptor now triggers on
+// HTTP 401 (the Agora server's response for an expired/invalid access token) instead of 403.
+// Upstream Replyke refreshes on 403, but the Agora server reserves 403 for genuine authorization
+// denials (members-only spaces, ownership/operator gates); 401 means "credentials expired",
+// which is the correct, spec-compliant trigger for a token refresh (RFC 9110 / RFC 6750).
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useEffect } from "react";
 import type { AxiosInstance } from "axios";
 import { axiosPrivate } from "./axios";
@@ -23,7 +30,10 @@ const useAxiosPrivate = (): AxiosInstance => {
       (response) => response,
       async (error) => {
         const prevRequest = error?.config;
-        if (error?.response?.status === 403 && !prevRequest?.sent) {
+        // 401 = expired/invalid access token → refresh and retry. (Upstream keyed off 403, but the
+        // Agora server returns 401 on expiry and uses 403 for authorization denials, which must NOT
+        // trigger a refresh — refreshing wouldn't grant access and would spam the refresh endpoint.)
+        if (error?.response?.status === 401 && !prevRequest?.sent) {
           prevRequest.sent = true;
 
           // Use mutex to prevent concurrent rotation races

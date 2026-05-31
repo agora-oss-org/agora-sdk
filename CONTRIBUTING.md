@@ -46,8 +46,9 @@ Three things — and only these three — diverge from upstream. Respect them wh
 2. **The `@replyke/*` → `@agora-sdk/*` rename is scripted, not hand-edited.** It's produced by
    `./rename-to-agora.sh` (idempotent). **Don't manually rename imports** — if you add code that
    references `@replyke/*` while merging upstream, let the script convert it.
-3. **Auth-flow behavior** (3 files) — `SignUpResult`, always-clear-on-sign-out, and the
-   account-map guard. These files carry a `Modified from original @replyke/core` header
+3. **Auth-flow behavior** (4 files) — `SignUpResult`, always-clear-on-sign-out, the account-map
+   guard, and the reactive refresh keyed on **401** (not upstream's 403, since Agora returns 401 on
+   token expiry). These files carry a `Modified from original @replyke/core` header
    (Apache-2.0 §4(b)) — **preserve that header** and keep edits surgical.
 
 Full detail (with file paths and the merge workflow) lives in [SYNCING.md](SYNCING.md). When in

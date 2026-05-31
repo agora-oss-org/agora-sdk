@@ -22,7 +22,7 @@ upstream's improvements painless.
    `react-js/src/hooks/useOAuthSignIn.ts`. Everything else derives from `getApiBaseUrl()`.
 2. **`@replyke/*` → `@agora-sdk/*` rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
    (idempotent, re-runnable). Keeping it scripted is what makes upstream merges cheap.
-3. **Auth-flow behavior** — hand edits in 3 files, each marked with a `Modified from original
+3. **Auth-flow behavior** — hand edits in 4 files, each marked with a `Modified from original
    @replyke/core` header (Apache-2.0 §4(b)):
    - `core/src/store/slices/authThunks.ts` + `core/src/hooks/auth/useAuth.ts`:
      `signUpWithEmailAndPassword` resolves to a **`SignUpResult`** (`{ status: "signed_in" }` |
@@ -35,6 +35,13 @@ upstream's improvements painless.
    - `core/src/hooks/auth/useAccountSync.ts`: only persist an account entry once the access
      token's `sub` matches the current `user.id`, preventing a **corrupt account map** (two ids
      sharing one refresh token) during the transient token/user desync on OAuth sign-in.
+   - `core/src/config/useAxiosPrivate.ts`: the reactive refresh interceptor triggers on **HTTP
+     401**, not upstream's 403. The Agora server returns **401** for an expired/invalid access
+     token (the spec-compliant code per RFC 9110 / RFC 6750) and reserves **403** for genuine
+     authorization denials (members-only spaces, ownership/operator gates). Keying refresh off 403
+     meant expiry never triggered a refresh (the request just failed until a full reload re-ran the
+     boot-path refresh), *and* every legitimate 403 uselessly hit the refresh endpoint. **Don't
+     "fix" this back to 403 when merging upstream** — 401 is correct for the Agora server contract.
 
    Unlike #1 and #2, these are genuine behavioral forks from upstream and the **likely
    merge-conflict spots** if upstream refactors auth — re-apply them by hand, preserving upstream's
