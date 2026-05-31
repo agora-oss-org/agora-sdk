@@ -181,11 +181,22 @@ Agora's API surface mirrors upstream Replyke. Until Agora-specific docs are publ
 
 ## Contributing
 
-Bug reports are welcome - please open an issue. When contributing, keep changes that diverge from upstream surgical, so syncing stays cheap (see [SYNCING.md](SYNCING.md)).
+**Contributions are welcome and encouraged** - bug reports, docs, examples, and code. Whether it's
+a typo fix or a new feature, we'd love your help making Agora better.
+
+See [**CONTRIBUTING.md**](CONTRIBUTING.md) for the full guide: how to set up the monorepo, the
+PR checklist, and commit conventions. One thing to know up front - **Agora is a fork of Replyke**,
+so pull requests target the **`agora`** branch (not `main`, which mirrors upstream verbatim), and
+changes that diverge from upstream are kept surgical so syncing stays cheap (see [SYNCING.md](SYNCING.md)).
+
+Good first steps: open an issue describing a bug or idea, or grab a docs improvement.
 
 ## Community and Support
 
-This is a fork maintained for internal use. For questions about the underlying framework, refer to the upstream [Replyke](https://github.com/replyke/monorepo) project.
+Agora is an open-source fork of Replyke, developed in the open - issues and pull requests are
+welcome (see [Contributing](#contributing)). For questions about the underlying framework, the
+upstream [Replyke](https://github.com/replyke/monorepo) project and its [docs](https://docs.replyke.com)
+are the best reference.
 
 ## Development
 

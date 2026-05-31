@@ -11,6 +11,12 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Added
+- **`CONTRIBUTING.md`** — contributor guide covering the fork/branch model (PRs target `agora`,
+  never the upstream-mirroring `main`), dev setup, the three upstream divergences to respect,
+  commit conventions, the changelog requirement, and the PR checklist. README's Contributing and
+  Community sections updated to actively welcome contributions and link the guide.
+
 ### Fixed
 - Corrected the README's API base URL docs, which still described the removed env-var
   auto-detection (`VITE_API_BASE_URL` / `REACT_APP_API_BASE_URL`). The Building Agora
