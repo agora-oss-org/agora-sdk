@@ -11,6 +11,12 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Fixed
+- Corrected the README's API base URL docs, which still described the removed env-var
+  auto-detection (`VITE_API_BASE_URL` / `REACT_APP_API_BASE_URL`). The Building Agora
+  section, the Quick Start steps, and the `App.tsx` example now show the `baseUrl` prop on
+  `ReplykeProvider` (read from the app's own env), matching the actual behavior since 1.0.2.
+
 ## [1.2.1] - 2026-05-30
 
 ### Changed

@@ -52,7 +52,7 @@ You can think of Agora as having two core layers:
 
 The base layer of Agora is its API, served by the [Agora server](https://github.com/jenova-marie/agora). Everything the system can do, you can do through the API - whether it's posting a comment, reporting content, creating a new entity, or updating a user profile. As long as you're authenticated for routes that require authentication, all functionality is accessible.
 
-The SDK points at your Agora server through `getApiBaseUrl()`, which defaults to `http://localhost:4000/v7` and is overridable via the `REACT_APP_API_BASE_URL` / `VITE_API_BASE_URL` environment variables.
+The SDK points at your Agora server through `getApiBaseUrl()`, which defaults to `http://localhost:4000/v7`. Override it by passing the `baseUrl` prop to `ReplykeProvider` — your app parses its own environment (e.g. `import.meta.env.VITE_API_BASE_URL`) and passes the resolved value in. (The SDK no longer auto-detects env vars itself; see [CHANGELOG.md](CHANGELOG.md).)
 
 ### 2. Libraries & SDKs (Developer Tools)
 
@@ -77,7 +77,7 @@ This is a minimal example for fetching and rendering an entity (a post, article,
 
 To use this example:
 
-1. Set `VITE_API_BASE_URL` to your Agora server's base URL (defaults to `http://localhost:4000/v7`).
+1. Pass your Agora server's base URL to `ReplykeProvider` via the `baseUrl` prop (defaults to `http://localhost:4000/v7` if omitted). Read it from your own env, e.g. `import.meta.env.VITE_API_BASE_URL`.
 2. Provide a `projectId` and a signed token for your user. The `useSignTestingJwt` helper signs a JWT locally for development.
 
 ```bash
@@ -99,6 +99,8 @@ import { useEffect, useState } from "react";
 
 const PROJECT_ID = import.meta.env.VITE_PUBLIC_PROJECT_ID;
 const PRIVATE_KEY = import.meta.env.VITE_PUBLIC_SECRET_KEY;
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000/v7";
 
 const DUMMY_USER = { id: "user1", username: "lionel_messi10" };
 const DUMMY_POST_ID = "post_1234";
@@ -130,7 +132,7 @@ function App() {
   }, []);
 
   return (
-    <ReplykeProvider projectId={PROJECT_ID} signedToken={signedToken}>
+    <ReplykeProvider projectId={PROJECT_ID} baseUrl={BASE_URL} signedToken={signedToken}>
       <EntityProvider foreignId={DUMMY_POST_ID} createIfNotFound>
         <Post />
       </EntityProvider>
