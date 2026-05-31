@@ -11,6 +11,26 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Added
+- **Claude Code plugin `agora-sdk`** (`plugins/agora-sdk/`, listed in `.claude-plugin/marketplace.json`)
+  so other developers' agents can install the skill with `/plugin marketplace add jenova-marie/agora-sdk`
+  + `/plugin install agora-sdk@agora-sdk`. The skill files live under the plugin's `skills/agora-sdk/`;
+  `.claude/skills/agora-sdk` is a symlink to them so the skill is still discovered in-repo from a single
+  source. Cross-references to repo-root docs were switched to GitHub URLs (installed plugins are cached
+  and can't reach files outside the plugin root). README gained a "Claude Code integration" section.
+- **Claude Code skill `agora-sdk`** (`plugins/agora-sdk/skills/agora-sdk/`) to help AI agents build apps on
+  the SDK. A hub `SKILL.md` (provider+scope+hooks mental model, the "lean on the Replyke docs MCP"
+  rule, and a divergence table covering the `@agora-sdk` scope rename, the `baseUrl` prop, the
+  `SignUpResult` union, and the feed-ranking sort options) plus four on-demand reference files:
+  `setup.md`, `auth.md`, `feeds.md`, `social-core.md`, `advanced.md` (spaces, chat,
+  connections-vs-follows — thin topology + gotchas, since these have no fork divergences), and a
+  self-contained `api-surface.md` (every exported provider/hook/type grouped by domain, generated
+  from the export barrel). The skill deliberately documents only the fork's delta from upstream
+  Replyke. Lookups follow a graceful ladder that works **without** the Replyke MCP or network:
+  bundled `api-surface.md` → the version-exact `.d.ts` in the consumer's `node_modules` → Replyke MCP
+  → `docs.replyke.com` via WebFetch. Keep the divergence table and `api-surface.md` in sync with this
+  changelog and SYNCING.md after upstream merges.
+
 ## [1.1.1] - 2026-05-28
 
 ### Fixed

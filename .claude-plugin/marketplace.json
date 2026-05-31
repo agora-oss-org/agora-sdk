@@ -1,0 +1,18 @@
+{
+  "name": "agora-sdk",
+  "owner": {
+    "name": "Jenova Marie",
+    "email": "jenova@recoverysky.org"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for the Agora SDK (@agora-sdk/*).",
+    "homepage": "https://github.com/jenova-marie/agora-sdk"
+  },
+  "plugins": [
+    {
+      "name": "agora-sdk",
+      "source": "./plugins/agora-sdk",
+      "description": "Skills that teach an agent to build React / React Native / Expo apps on the Agora SDK — providers, hooks, feeds, auth, chat, spaces — and the four ways the fork diverges from upstream Replyke."
+    }
+  ]
+}

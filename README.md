@@ -155,6 +155,19 @@ export default App;
 
 Agora's API surface mirrors upstream Replyke. Until Agora-specific docs are published, the upstream reference at [https://docs.replyke.com](https://docs.replyke.com) is the closest guide - keeping in mind that the package scope here is `@agora-sdk/*` and base URLs are driven by `getApiBaseUrl()`. See [SYNCING.md](SYNCING.md) for how this fork tracks upstream.
 
+### Claude Code integration
+
+This repo ships a [Claude Code](https://claude.com/claude-code) plugin that teaches an AI agent how to build apps on the Agora SDK — the provider+hooks model, feeds/auth/chat/spaces, and the ways this fork diverges from upstream Replyke. The skills look things up via a bundled API surface and the consumer's own installed `.d.ts`, so they work without any extra MCP server or network access.
+
+Install it from this repo:
+
+```
+/plugin marketplace add jenova-marie/agora-sdk
+/plugin install agora-sdk@agora-sdk
+```
+
+The plugin lives in [`plugins/agora-sdk/`](plugins/agora-sdk/); the marketplace catalog is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+
 ## Contributing
 
 Bug reports are welcome - please open an issue. When contributing, keep changes that diverge from upstream surgical, so syncing stays cheap (see [SYNCING.md](SYNCING.md)).
