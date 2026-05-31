@@ -11,6 +11,8 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-05-30
+
 ### Changed
 - Promoted the Claude Code plugin/skill install instructions from a subsection under
   "Documentation" to a prominent top-level **🤖 Claude Code Skills** section in the README
@@ -139,7 +141,8 @@ are folded in here).
   server) is replayed and the server's reuse-detection revokes the token family.
   Clears on a storage reset. Not patched, to keep the fork cleanly mergeable upstream.
 
-[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.2.0...agora
+[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.2.1...agora
+[1.2.1]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.2.1
 [1.2.0]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.2.0
 [1.1.1]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.1.1
 [1.1.0]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.1.0
