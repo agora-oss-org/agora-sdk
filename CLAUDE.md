@@ -27,11 +27,13 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
 2. **The `@replyke/*` → `@agora-sdk/*` rename is scripted, not hand-edited** — produced by
    `./rename-to-agora.sh` (idempotent, re-runnable). When merging upstream, let the script convert
    any `@replyke/*` references; don't rename imports by hand.
-3. **Auth-flow behavior** (3 files, each carrying a `Modified from original @replyke/core` Apache-2.0
+3. **Auth-flow behavior** (4 files, each carrying a `Modified from original @replyke/core` Apache-2.0
    §4(b) header that must be preserved): `signUpWithEmailAndPassword` resolves to a `SignUpResult`
    union (`signed_in` | `confirmation_required`) instead of `void`; sign-out always clears local
    state even if the server revoke fails; `useAccountSync` only persists an account once the access
-   token's `sub` matches the current `user.id` (prevents a corrupt account map on OAuth sign-in).
+   token's `sub` matches the current `user.id` (prevents a corrupt account map on OAuth sign-in);
+   `useAxiosPrivate` refreshes on HTTP **401** (Agora returns 401 on token expiry, 403 for
+   authorization denials) — upstream keys off 403, so don't revert it on merge.
 
 These auth files are the likely merge-conflict spots if upstream refactors auth — re-apply by hand,
 preserve upstream's surrounding logic, and keep the headers.
