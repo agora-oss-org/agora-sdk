@@ -20,8 +20,8 @@ be treated.
   and what you expected vs. saw.
 - **Suggest a feature** — open an issue describing the use case. Because Agora tracks upstream
   Replyke (see below), new behavior is weighed against how hard it makes future merges.
-- **Improve docs** — README, this file, [SYNCING.md](SYNCING.md), or the Claude Code skill under
-  [`plugins/agora/`](plugins/agora/). Docs-only PRs are very welcome.
+- **Improve docs** — README, this file, or [SYNCING.md](SYNCING.md). Docs-only PRs are very welcome.
+  (The Claude Code skill lives in its own repo, [jenova-marie/agora-plugins](https://github.com/jenova-marie/agora-plugins).)
 - **Send code** — bug fixes and small, focused features. For anything large, open an issue first so
   we can agree on the approach before you invest time.
 
@@ -79,7 +79,6 @@ packages/
   react-js/      @agora-sdk/react-js      — web (localStorage, OAuth)
   react-native/  @agora-sdk/react-native  — bare RN (Keychain)
   expo/          @agora-sdk/expo          — Expo (SecureStore)
-plugins/agora/   Claude Code plugin (skill that teaches agents to build on the SDK)
 ```
 
 ## Making a change

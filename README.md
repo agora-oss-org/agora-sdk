@@ -147,7 +147,7 @@ export default App;
 
 ## 🤖 Claude Code Skills
 
-> **Building with an AI coding agent? Install the Agora skill first.** This repo ships a [Claude Code](https://claude.com/claude-code) plugin that teaches Claude (and any Claude-powered agent) how to build on this SDK correctly — and, crucially, *where Agora diverges from upstream Replyke*, so the agent doesn't generate code that won't compile or quietly talks to the wrong server.
+> **Building with an AI coding agent? Install the Agora skill first.** Agora ships a [Claude Code](https://claude.com/claude-code) plugin (hosted in [`jenova-marie/agora-plugins`](https://github.com/jenova-marie/agora-plugins)) that teaches Claude (and any Claude-powered agent) how to build on this SDK correctly — and, crucially, *where Agora diverges from upstream Replyke*, so the agent doesn't generate code that won't compile or quietly talks to the wrong server.
 
 The bundled skill gives an agent:
 
@@ -160,11 +160,11 @@ It resolves API details from a bundled API-surface index and your own installed 
 ### Install
 
 ```
-/plugin marketplace add jenova-marie/agora-sdk
-/plugin install agora@agora-sdk
+/plugin marketplace add jenova-marie/agora-plugins
+/plugin install agora@agora-plugins
 ```
 
-Then just describe the task — e.g. *"add a comment section to this screen with @agora-sdk/expo"* — and the skill activates automatically (it's namespaced `agora:sdk`). The plugin lives in [`plugins/agora/`](plugins/agora/); the marketplace catalog is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+Then just describe the task — e.g. *"add a comment section to this screen with @agora-sdk/expo"* — and the skill activates automatically (it's namespaced `agora:sdk`). Source and docs live in the [`agora-plugins`](https://github.com/jenova-marie/agora-plugins) repo.
 
 ## Comparison With Alternatives
 

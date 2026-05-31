@@ -11,6 +11,13 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Removed
+- **Extracted the Claude Code plugin to its own repo, [`jenova-marie/agora-plugins`](https://github.com/jenova-marie/agora-plugins).**
+  Removed `plugins/`, `.claude-plugin/`, and the `.claude/skills/` symlink from this repo, keeping the
+  fork a clean mirror of upstream + the documented divergences. The README's "Claude Code Skills"
+  section still advertises the plugin but now points at the new repo:
+  `/plugin marketplace add jenova-marie/agora-plugins` + `/plugin install agora@agora-plugins`.
+
 ### Added
 - **`CONTRIBUTING.md`** — contributor guide covering the fork/branch model (PRs target `agora`,
   never the upstream-mirroring `main`), dev setup, the three upstream divergences to respect,
