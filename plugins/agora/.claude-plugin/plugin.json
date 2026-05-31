@@ -1,7 +1,7 @@
 {
-  "name": "agora-sdk",
+  "name": "agora",
   "description": "Build apps on the Agora SDK (@agora-sdk/*): provider+hooks model for comments, reactions, feeds, auth, chat, spaces — plus the fork's divergences from upstream Replyke. Skills look things up via a bundled API surface, the consumer's installed .d.ts, and (optionally) the Replyke docs, so they work offline.",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "author": {
     "name": "Jenova Marie",
     "email": "jenova@recoverysky.org"

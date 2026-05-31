@@ -15,6 +15,7 @@ Built with a headless, TypeScript-first architecture, Agora fits seamlessly into
 - [Approach and Structure](#building-agora-a-layered-api-centric-approach)
 - [Packages](#packages)
 - [Quick Start](#quick-start)
+- [Claude Code Skills](#-claude-code-skills)
 - [Comparison With Alternatives](#comparison-with-alternatives)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
@@ -142,6 +143,27 @@ export default App;
 
 > Note: the provider and hook names retain their upstream `Replyke*` identifiers in code; only the package scope is rebranded to `@agora-sdk/*`. UI components (e.g. a prebuilt comment section) are not part of this SDK fork - it ships the headless API and hooks layer.
 
+## 🤖 Claude Code Skills
+
+> **Building with an AI coding agent? Install the Agora skill first.** This repo ships a [Claude Code](https://claude.com/claude-code) plugin that teaches Claude (and any Claude-powered agent) how to build on this SDK correctly — and, crucially, *where Agora diverges from upstream Replyke*, so the agent doesn't generate code that won't compile or quietly talks to the wrong server.
+
+The bundled skill gives an agent:
+
+- the **provider → scope → hooks** mental model that unlocks ~150 hooks;
+- focused references for **auth, feeds & ranking, the comment + reaction core, chat, and spaces**;
+- the four **fork divergences** from upstream Replyke — the `@agora-sdk/*` scope, the injected `baseUrl` prop, the `SignUpResult` signup flow, and the extra feed-ranking modes (`decay` / `gravity` / `wilson` / `bayesian`).
+
+It resolves API details from a bundled API-surface index and your own installed `.d.ts`, so it works **with no extra MCP server and no network access**.
+
+### Install
+
+```
+/plugin marketplace add jenova-marie/agora-sdk
+/plugin install agora@agora-sdk
+```
+
+Then just describe the task — e.g. *"add a comment section to this screen with @agora-sdk/expo"* — and the skill activates automatically (it's namespaced `agora:sdk`). The plugin lives in [`plugins/agora/`](plugins/agora/); the marketplace catalog is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+
 ## Comparison With Alternatives
 
 |                     | **Agora** | Replyke | Disqus        | Supabase + DIY | Custom Build |
@@ -153,20 +175,7 @@ export default App;
 
 ## Documentation
 
-Agora's API surface mirrors upstream Replyke. Until Agora-specific docs are published, the upstream reference at [https://docs.replyke.com](https://docs.replyke.com) is the closest guide - keeping in mind that the package scope here is `@agora-sdk/*` and base URLs are driven by `getApiBaseUrl()`. See [SYNCING.md](SYNCING.md) for how this fork tracks upstream.
-
-### Claude Code integration
-
-This repo ships a [Claude Code](https://claude.com/claude-code) plugin that teaches an AI agent how to build apps on the Agora SDK — the provider+hooks model, feeds/auth/chat/spaces, and the ways this fork diverges from upstream Replyke. The skills look things up via a bundled API surface and the consumer's own installed `.d.ts`, so they work without any extra MCP server or network access.
-
-Install it from this repo:
-
-```
-/plugin marketplace add jenova-marie/agora-sdk
-/plugin install agora-sdk@agora-sdk
-```
-
-The plugin lives in [`plugins/agora-sdk/`](plugins/agora-sdk/); the marketplace catalog is [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json).
+Agora's API surface mirrors upstream Replyke. Until Agora-specific docs are published, the upstream reference at [https://docs.replyke.com](https://docs.replyke.com) is the closest guide - keeping in mind that the package scope here is `@agora-sdk/*` and base URLs are driven by `getApiBaseUrl()`. See [SYNCING.md](SYNCING.md) for how this fork tracks upstream. Building with an AI agent? See [Claude Code Skills](#-claude-code-skills) above.
 
 ## Contributing
 

@@ -10,8 +10,8 @@
   },
   "plugins": [
     {
-      "name": "agora-sdk",
-      "source": "./plugins/agora-sdk",
+      "name": "agora",
+      "source": "./plugins/agora",
       "description": "Skills that teach an agent to build React / React Native / Expo apps on the Agora SDK — providers, hooks, feeds, auth, chat, spaces — and the four ways the fork diverges from upstream Replyke."
     }
   ]

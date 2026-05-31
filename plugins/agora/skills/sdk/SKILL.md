@@ -1,5 +1,5 @@
 ---
-name: agora-sdk
+name: sdk
 description: Use when building a React, React Native, or Expo app on the Agora SDK (@agora-sdk/core, @agora-sdk/react-js, @agora-sdk/react-native, @agora-sdk/expo) — social features like comments, reactions/votes, feeds, follows, spaces, chat, notifications, and auth. Agora is a fork of Replyke; this skill maps the provider+hooks model and flags where the fork's API diverges from upstream Replyke docs.
 metadata:
   author: jenova-marie

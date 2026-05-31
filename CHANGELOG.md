@@ -11,6 +11,16 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Changed
+- Promoted the Claude Code plugin/skill install instructions from a subsection under
+  "Documentation" to a prominent top-level **🤖 Claude Code Skills** section in the README
+  (added to the table of contents), and left a cross-link from Documentation.
+- Renamed the Claude Code plugin `agora-sdk` → `agora` and its skill `agora-sdk` → `sdk`, so the
+  skill is namespaced `agora:sdk` instead of the repetitive `agora-sdk:agora-sdk`. Plugin dir is now
+  `plugins/agora/` (skill at `skills/sdk/`); the marketplace stays `agora-sdk`, so install is
+  `/plugin install agora@agora-sdk`. **Breaking for anyone who already installed `agora-sdk@agora-sdk`** —
+  reinstall under the new name after updating the marketplace.
+
 ## [1.2.0] - 2026-05-30
 
 ### Added
