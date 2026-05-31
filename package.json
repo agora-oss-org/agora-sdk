@@ -20,9 +20,9 @@
     "typescript"
   ],
   "bugs": {
-    "url": "https://discord.com/invite/REKxnCJzPz"
+    "url": "https://github.com/jenova-marie/agora-sdk/issues"
   },
-  "homepage": "https://replyke.com",
+  "homepage": "https://www.agora-oss.org",
   "repository": {
     "type": "git",
     "url": "https://github.com/jenova-marie/agora-sdk.git"
