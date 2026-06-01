@@ -1,3 +1,9 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — useEntityData (and therefore EntityProvider) now
+// accepts an optional `include` and forwards it to the single-entity fetch hooks, so a detail view
+// can load related data such as the entity author (include=["user"]). `include` is also folded into
+// the fetch cache key so changing it re-fetches. Additive and backward-compatible.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import useFetchEntity from "./useFetchEntity";
@@ -6,7 +12,7 @@ import useFetchEntityByShortId from "./useFetchEntityByShortId";
 import useUpdateEntity, { UpdateEntityProps } from "./useUpdateEntity";
 import useDeleteEntity from "./useDeleteEntity";
 
-import { Entity } from "../../interfaces/models/Entity";
+import { Entity, EntityIncludeParam } from "../../interfaces/models/Entity";
 import { handleError } from "../../utils/handleError";
 
 export type UseEntityDataProps =
@@ -16,6 +22,7 @@ export type UseEntityDataProps =
       foreignId?: undefined;
       shortId?: undefined;
       createIfNotFound?: undefined;
+      include?: undefined;
     }
   | {
       entity?: undefined;
@@ -23,6 +30,7 @@ export type UseEntityDataProps =
       foreignId?: undefined;
       shortId?: undefined;
       createIfNotFound?: undefined;
+      include?: EntityIncludeParam;
     }
   | {
       entity?: undefined;
@@ -30,6 +38,7 @@ export type UseEntityDataProps =
       foreignId?: undefined;
       shortId: string;
       createIfNotFound?: undefined;
+      include?: EntityIncludeParam;
     }
   | {
       entity?: undefined;
@@ -37,6 +46,7 @@ export type UseEntityDataProps =
       foreignId: string;
       shortId?: undefined;
       createIfNotFound?: boolean;
+      include?: EntityIncludeParam;
     };
 export interface UseEntityDataValues {
   entity: Entity | null | undefined;
@@ -53,6 +63,7 @@ function useEntityData({
   shortId,
   entity: entityProp,
   createIfNotFound,
+  include,
 }: UseEntityDataProps): UseEntityDataValues {
   const [entity, setEntity] = useState<Entity | undefined | null>(entityProp);
 
@@ -102,7 +113,10 @@ function useEntityData({
       if (entity && foreignId && entity.foreignId === foreignId) return;
       if (entity && shortId && entity.shortId === shortId) return;
 
-      const uniqueKey = `${entityId ?? ""}-${foreignId ?? ""}-${shortId ?? ""}`;
+      // Fold `include` into the cache key so a changed `include` (same id) is a cache miss
+      // and re-fetches, rather than serving the previously-fetched entity without it.
+      const includeKey = Array.isArray(include) ? include.join(",") : include ?? "";
+      const uniqueKey = `${entityId ?? ""}-${foreignId ?? ""}-${shortId ?? ""}-${includeKey}`;
 
       // If we have a cached entity, update the state and exit.
       if (entityCache.current[uniqueKey]) {
@@ -116,15 +130,18 @@ function useEntityData({
         if (entityId) {
           fetchedEntity = await fetchEntity({
             entityId,
+            include,
           });
         } else if (foreignId) {
           fetchedEntity = await fetchEntityByForeignId({
             foreignId,
             createIfNotFound,
+            include,
           });
         } else if (shortId) {
           fetchedEntity = await fetchEntityByShortId({
             shortId,
+            include,
           });
         }
 
@@ -150,6 +167,7 @@ function useEntityData({
     shortId,
     entity,
     createIfNotFound,
+    include,
   ]);
 
   useEffect(() => {

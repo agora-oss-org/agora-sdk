@@ -11,6 +11,17 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Added
+- **`EntityProvider` / `useEntityData` now accept an optional `include`.** Pass
+  `include={["user"]}` (an `EntityIncludeParam`) to load related data — most usefully the entity's
+  author on a single-entity detail view, so the poster's name/avatar render alongside the post.
+  `useEntityData` now threads `include` into the three single-entity fetch hooks (which already
+  accepted it) and folds it into the fetch cache key so changing `include` re-fetches. Fully
+  additive and backward-compatible — omitting `include` sends no `include` param and behaves exactly
+  as before. Brings the detail view in line with the entity-list (`EntityListConfig.include`) and
+  comment-section hooks. Divergence from upstream Replyke (a generic fix to an upstream
+  inconsistency — strong upstream-PR candidate) — see SYNCING.md #4.
+
 ## [1.2.2] - 2026-05-31
 
 ### Removed

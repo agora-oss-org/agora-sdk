@@ -48,6 +48,18 @@ upstream's improvements painless.
    surrounding logic, and keep the `Modified from original` headers. (Server-side counterpart:
    `/auth/sign-up` returns `{ status: "confirmation_required" }`, documented in the Agora server's
    `docs/MANIFEST.md`.)
+4. **Entity `include` passthrough** — hand edit in 1 file, marked with a `Modified from original
+   @replyke/core` header:
+   - `core/src/hooks/entities/useEntityData.tsx`: accepts an optional `include`
+     (`EntityIncludeParam`) and forwards it to the single-entity fetch hooks (`useFetchEntity`,
+     `useFetchEntityByForeignId`, `useFetchEntityByShortId` — which already accept it), so
+     `EntityProvider` can load related data such as the entity author (`include={["user"]}`) on a
+     detail view, matching the entity-list and comment-section hooks. `include` is also folded into
+     the fetch cache key so changing it re-fetches. Additive and backward-compatible.
+
+   This is a generic fix to an inconsistency in upstream Replyke itself (the fetch hooks already take
+   `include`; only `useEntityData` failed to thread it). **Strong upstream-PR candidate** — if
+   contributed to Replyke it dissolves on the next merge.
 
 ## Sync workflow
 

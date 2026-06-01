@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Agora is a fork of [replyke/monorepo](https://github.com/replyke/monorepo), rescoped to
 `@agora-sdk/*` and repointed at an [Agora server](https://github.com/jenova-marie/agora). The
 fork's entire value is that its divergence from upstream is **tiny and documented**, which keeps
-upstream merges cheap. Before editing, understand the branch model and the three divergences —
+upstream merges cheap. Before editing, understand the branch model and the four divergences —
 full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Branches:**
@@ -34,9 +34,13 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
    token's `sub` matches the current `user.id` (prevents a corrupt account map on OAuth sign-in);
    `useAxiosPrivate` refreshes on HTTP **401** (Agora returns 401 on token expiry, 403 for
    authorization denials) — upstream keys off 403, so don't revert it on merge.
+4. **Entity `include` passthrough** (1 file, with the `Modified from original @replyke/core` header):
+   `core/src/hooks/entities/useEntityData.tsx` threads an optional `include` into the single-entity
+   fetch hooks so `EntityProvider` can load related data (e.g. the author via `include={["user"]}`).
+   Additive; a generic fix to an upstream inconsistency and a strong upstream-PR candidate.
 
-These auth files are the likely merge-conflict spots if upstream refactors auth — re-apply by hand,
-preserve upstream's surrounding logic, and keep the headers.
+The auth files (#3) are the likely merge-conflict spots if upstream refactors auth — re-apply by
+hand, preserve upstream's surrounding logic, and keep the headers.
 
 ## Development commands
 
