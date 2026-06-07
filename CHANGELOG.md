@@ -22,6 +22,16 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   comment-section hooks. Divergence from upstream Replyke (a generic fix to an upstream
   inconsistency — strong upstream-PR candidate) — see SYNCING.md #4.
 
+### Changed
+- **Synced upstream's `replyke` → `sublay` rebrand** (`git merge -s ours main`). The upstream delta
+  was a pure brand rename that collides head-on with this fork's `@replyke/* → @agora-sdk/*` rename,
+  so it was recorded as merged (advancing the merge-base for clean future pulls) while leaving the
+  `agora` tree unchanged — the `@sublay/*` names and `*.sublay.io` brand-domain URLs are declined,
+  same as the `@replyke` originals.
+- **Adopted upstream's one non-rename improvement:** a `declare const process` guard in
+  `core/src/utils/env.ts`, so the `typeof process` checks typecheck without `@types/node` on
+  browser/RN/Vite targets where `process` may be absent.
+
 ## [1.2.2] - 2026-05-31
 
 ### Removed

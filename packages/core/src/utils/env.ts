@@ -6,6 +6,14 @@
 // Environment detection utility for cross-platform compatibility
 // Works with both traditional React apps and Vite-based apps
 
+// Declare `process` so the `typeof process` guards below typecheck without
+// pulling in @types/node (this package targets browser/RN/Vite too, where
+// `process` may be absent). Picked up from upstream during the sublay rebrand
+// sync — the one non-rename improvement in that delta.
+declare const process:
+  | { env?: Record<string, string | undefined> }
+  | undefined;
+
 // Helper function to safely access Vite's import.meta.env
 function getViteEnv(): Record<string, any> | null {
   try {

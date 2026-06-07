@@ -20,6 +20,8 @@ upstream's improvements painless.
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
    (`BASE_URL = getApiBaseUrl()`), `core/src/context/chat-context.tsx` (socket fallback),
    `react-js/src/hooks/useOAuthSignIn.ts`. Everything else derives from `getApiBaseUrl()`.
+   `env.ts` additionally carries a `declare const process` guard (adopted from upstream during the
+   sublay-rebrand sync) so the `typeof process` checks typecheck without `@types/node`.
 2. **`@replyke/*` → `@agora-sdk/*` rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
    (idempotent, re-runnable). Keeping it scripted is what makes upstream merges cheap.
 3. **Auth-flow behavior** — hand edits in 4 files, each marked with a `Modified from original
