@@ -11,7 +11,7 @@ upstream's improvements painless.
 | `upstream` | `github.com/replyke/monorepo` — the original (read-only for us) |
 | `origin` | private mirror (`git.rso`) |
 | `github` | public mirror (`github.com/jenova-marie/agora-sdk`) |
-| **`main`** | mirrors `upstream/main` verbatim — **keep original `@replyke/*` names, no edits** |
+| **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
 ## What diverges from upstream (three things)
@@ -23,7 +23,9 @@ upstream's improvements painless.
    `env.ts` additionally carries a `declare const process` guard (adopted from upstream during the
    sublay-rebrand sync) so the `typeof process` checks typecheck without `@types/node`.
 2. **`@replyke/*` → `@agora-sdk/*` rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
-   (idempotent, re-runnable). Keeping it scripted is what makes upstream merges cheap.
+   (idempotent, re-runnable). Upstream rebranded `@replyke/*` → `@sublay/*` (merged into `agora` via
+   `-s ours`, content declined), so the script now converts **both** `@replyke/` and `@sublay/`
+   quoted imports → `@agora-sdk/`. Keeping it scripted is what makes upstream merges cheap.
 3. **Auth-flow behavior** — hand edits in 4 files, each marked with a `Modified from original
    @replyke/core` header (Apache-2.0 §4(b)):
    - `core/src/store/slices/authThunks.ts` + `core/src/hooks/auth/useAuth.ts`:
@@ -74,13 +76,15 @@ git merge --ff-only upstream/main          # or: git reset --hard upstream/main
 # 2. Merge upstream into our working branch
 git checkout agora
 git merge main
+#   (If an upstream delta is a *pure* rebrand/rename you're declining wholesale — as the
+#    @replyke->@sublay one was — record it without taking content: `git merge -s ours main`.)
 #   Conflicts are rare and predictable:
-#   - Rename lines DON'T usually conflict: upstream keeps @replyke, we keep @agora-sdk, and git
-#     takes ours unless upstream edited the exact same import line.
+#   - Rename lines DON'T usually conflict: upstream uses @sublay (formerly @replyke), we use
+#     @agora-sdk, and git takes ours unless upstream edited the exact same import line.
 #   - The 4 base-URL files above are the likely conflict spots if upstream refactors them —
 #     re-apply our env-driven version, keeping upstream's surrounding logic.
 
-# 3. Re-apply the scope to any NEW @replyke refs upstream introduced (idempotent)
+# 3. Re-apply the scope to any NEW @replyke/@sublay refs upstream introduced (idempotent)
 ./rename-to-agora.sh
 
 # 4. Relink + verify
@@ -95,10 +99,10 @@ git push origin agora && git push github agora
 ## Why this stays cheap
 
 Git only conflicts when **both** sides change the **same lines**. Upstream never touches our
-`@agora-sdk` rename (they stay `@replyke`), so the rename almost never conflicts — and when a new
-`@replyke` reference arrives from upstream, step 3 converts it deterministically. The real
-review surface each sync is the 4 base-URL files plus the 2 auth-flow files (divergence #3) — keep
-those edits surgical and syncing remains a few minutes of work.
+`@agora-sdk` rename (they use `@sublay`, formerly `@replyke`), so the rename almost never conflicts
+— and when a new `@sublay` (or legacy `@replyke`) reference arrives from upstream, step 3 converts
+it deterministically. The real review surface each sync is the 4 base-URL files plus the 2 auth-flow
+files (divergence #3) — keep those edits surgical and syncing remains a few minutes of work.
 
 > ⚠️ Never commit `@agora-sdk` names onto `main` — it must stay a clean mirror of upstream so step 1
 > always fast-forwards.
