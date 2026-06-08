@@ -12,6 +12,13 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 ## [Unreleased]
 
 ### Added
+- **`docs/KNOWN_ISSUES.md`** documenting the inherited bundler-only packaging behavior: the published
+  `@agora-sdk/*` packages are not importable by Node's native ESM/CJS loader (extensionless ESM
+  specifiers, CJS under `"type":"module"` with no marker, no `exports` map). It works for all bundled
+  consumers and is **deliberately not fixed** (large delta vs. the sync model; an `exports` map would
+  risk breaking consumers). Includes the testing implications and the proven fix recipe for if it's
+  ever needed. Linked from a ⚠️ alert in CLAUDE.md. Documentation of inherited behavior, not a
+  divergence from upstream.
 - **`EntityProvider` / `useEntityData` now accept an optional `include`.** Pass
   `include={["user"]}` (an `EntityIncludeParam`) to load related data — most usefully the entity's
   author on a single-entity detail view, so the poster's name/avatar render alongside the post.

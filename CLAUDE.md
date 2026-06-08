@@ -56,6 +56,16 @@ This is a [pnpm](https://pnpm.io) workspace monorepo (`pnpm-workspace.yaml` glob
 
 There is no test suite or linter wired up in this repo.
 
+> ⚠️ **Before adding tests or touching the build/packaging, read
+> [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).** The published `@agora-sdk/*` packages are
+> **bundler-only** — they are *not* importable by Node's native ESM/CJS loader (extensionless ESM
+> specifiers; CJS output under `"type":"module"` with no `dist/cjs/package.json` marker; no `exports`
+> map). This is inherited from upstream Replyke and **deliberately not fixed** (fixing it is a huge
+> delta against the sync model, and an `exports` map would risk breaking existing consumers). It does
+> **not** block in-repo tests: a Vite/vitest runner transforms source, so testing a package's own
+> `src` works — only importing another `@agora-sdk/*` package *by name* needs an alias-to-source or
+> `deps.inline` in the test config. Never "fix" the packaging to make a test pass.
+
 ### Releases
 
 `scripts/release.sh` (via `pnpm run patch` / `minor` / `major`) bumps all four `@agora-sdk/*`
