@@ -14,7 +14,7 @@ upstream's improvements painless.
 | **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
-## What diverges from upstream (three things)
+## What diverges from upstream (five things)
 
 1. **Base-URL repoint** — committed code on `agora`, 4 files:
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
@@ -64,6 +64,19 @@ upstream's improvements painless.
    This is a generic fix to an inconsistency in upstream Replyke itself (the fetch hooks already take
    `include`; only `useEntityData` failed to thread it). **Strong upstream-PR candidate** — if
    contributed to Replyke it dissolves on the next merge.
+5. **Chat date fields as ISO strings** — hand edits in 3 files, each marked with a `Modified from
+   original @replyke/core` header:
+   - `core/src/interfaces/models/ChatMessage.ts`: `createdAt`/`updatedAt` retyped `Date → string`.
+   - `core/src/interfaces/models/Conversation.ts`: `lastMessageAt` retyped `Date | null → string | null`.
+   - `core/src/hooks/chat/messages/useSendMessage.tsx`: the optimistic message stores
+     `new Date().toISOString()` instead of a live `Date`.
+
+   The server sends these timestamps as ISO **strings** over JSON; the live `Date` minted in the
+   optimistic-send path was the only non-serializable value entering the Redux chat store, tripping
+   RTK's `serializableCheck` on `chat/addOptimisticMessage`. Retyping to `string` matches the wire
+   shape (consumers already wrap in `new Date(...)` at the point of use). This is a generic fix to an
+   upstream bug — **strong upstream-PR candidate** (the header is fork-only and must NOT go in the
+   upstream PR); if contributed to Replyke it dissolves on the next merge.
 
 ## Sync workflow
 

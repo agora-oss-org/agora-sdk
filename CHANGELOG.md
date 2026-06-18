@@ -29,6 +29,20 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   comment-section hooks. Divergence from upstream Replyke (a generic fix to an upstream
   inconsistency — strong upstream-PR candidate) — see SYNCING.md #4.
 
+### Fixed
+- **Chat store no longer holds a non-serializable `Date` (Redux Toolkit `serializableCheck` warning).**
+  `useSendMessage` minted a live `Date` for the optimistic message's `createdAt`/`updatedAt` and
+  dispatched it in `chat/addOptimisticMessage` — the only place a `Date` object entered the chat
+  store. RTK's `serializableCheck` flagged it (`A non-serializable value was detected … path:
+  payload.createdAt`), and the optimistic row's shape diverged from the server-confirmed row, whose
+  dates arrive as ISO **strings** over JSON. The optimistic message now stores ISO strings
+  (`new Date().toISOString()`), and `ChatMessage.createdAt`/`updatedAt` are retyped `string` to match
+  the wire shape (all consumers already wrap in `new Date(...)`). Store is fully serializable again;
+  optimistic and confirmed rows are identical in shape. The three touched files (`ChatMessage.ts`,
+  `Conversation.ts`, `useSendMessage.tsx`) now carry the `Modified from original @replyke/core`
+  Apache-2.0 header — a tracked divergence (#5) and, being a generic fix to an upstream bug, a strong
+  upstream-PR candidate (see SYNCING.md #5; the header is fork-only and stays out of any upstream PR).
+
 ### Changed
 - **Synced upstream's `replyke` → `sublay` rebrand** (`git merge -s ours main`). The upstream delta
   was a pure brand rename that collides head-on with this fork's `@replyke/* → @agora-sdk/*` rename,

@@ -1,3 +1,10 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — the optimistic message's `createdAt`/`updatedAt` are
+// now ISO strings (`new Date().toISOString()`) instead of a live `Date`. That `Date` was the only
+// non-serializable value entering the chat store, tripping RTK's serializableCheck on
+// `addOptimisticMessage`; matching the server's wire shape keeps optimistic and confirmed rows
+// identical and the store fully serializable.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useCallback } from "react";
 import { useReplykeDispatch, useReplykeSelector } from "../../../store/hooks";
 import {
@@ -54,7 +61,12 @@ function useSendMessage({
       if (!conversationId) throw new Error("No conversationId provided.");
 
       const localId = crypto.randomUUID();
-      const now = new Date();
+      // ISO string, NOT a Date object: the server sends createdAt/updatedAt as JSON strings, so the
+      // confirmed message that replaces this one carries strings. Minting a live Date here was the
+      // only place a non-serializable value entered the chat store, tripping Redux Toolkit's
+      // serializableCheck on the addOptimisticMessage action; matching the wire shape keeps the
+      // optimistic and confirmed rows identical and the store fully serializable.
+      const now = new Date().toISOString();
 
       // Insert optimistic message immediately
       const optimisticMsg: ChatMessage = {

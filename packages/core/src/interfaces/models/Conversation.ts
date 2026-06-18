@@ -1,3 +1,8 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — `lastMessageAt` retyped from `Date | null` to
+// `string | null` (ISO over the wire, patched from a ChatMessage's string `createdAt`), keeping the
+// conversation-list store serializable (RTK serializableCheck). Sorted via `new Date(...)`.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { File } from "./File";
 import { ChatMessage } from "./ChatMessage";
 import { ConversationMember } from "./ConversationMember";
@@ -11,7 +16,10 @@ export interface Conversation {
   spaceId: string | null;
   createdById: string | null;
   avatarFileId: string | null;
-  lastMessageAt: Date | null;
+  // ISO string over the wire, and patched from a ChatMessage's (string) createdAt on new messages.
+  // Sorted via `new Date(lastMessageAt)` in the chat slice. Typed `string` (not `Date`) to match the
+  // wire shape and keep the conversation-list store serializable (RTK serializableCheck).
+  lastMessageAt: string | null;
   // Null for DMs and groups; 'members' | 'admins' for space chats
   postingPermission: "members" | "admins" | null;
   metadata: Record<string, any>;
