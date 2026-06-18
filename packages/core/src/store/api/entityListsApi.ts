@@ -109,6 +109,8 @@ interface FetchEntitiesParams {
   sourceId?: string | null;
   spaceId?: string | null;
   include?: EntityIncludeParam | null;
+  spaceReputationId?: string | null;
+  spaceReputationDescendants?: boolean | null;
 }
 
 interface CreateEntityParams {
@@ -175,7 +177,9 @@ export const entityListsApi = baseApi.injectEndpoints({
         titleFilters,
         contentFilters,
         attachmentsFilters,
-        include
+        include,
+        spaceReputationId,
+        spaceReputationDescendants
       }) => {
         if (!sortBy) {
           throw new Error("sortBy is required for fetching entities");
@@ -194,6 +198,9 @@ export const entityListsApi = baseApi.injectEndpoints({
             userId,
             sourceId,
             spaceId,
+            spaceReputationId,
+            spaceReputationDescendants:
+              spaceReputationDescendants === null ? undefined : spaceReputationDescendants,
             sortBy,
             sortByReaction,
             sortDir,

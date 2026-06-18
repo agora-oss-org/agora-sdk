@@ -20,20 +20,23 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
 **The only things that diverge from upstream — keep edits within these, don't add new fork points:**
 
 1. **Base-URL repoint** (4 files: `core/src/utils/env.ts`, `core/src/config/axios.ts`,
-   `core/src/context/chat-context.tsx`, `react-js/src/hooks/useOAuthSignIn.ts`). The SDK reads its
+   `core/src/context/chat-context.tsx`, `core/src/hooks/auth/oauthCore.ts` — the OAuth helper
+   defaults its `baseUrl` to `getApiBaseUrl()`; the platform `useOAuthSignIn` hooks call into it and
+   need no edit). The SDK reads its
    API base URL from the `baseUrl` prop on `ReplykeProvider` via `getApiBaseUrl()` (default
    `http://localhost:4000/v7`), **not** from env-var auto-detection. Everything reads it lazily,
    per-request, so the injected value always wins.
 2. **The `@replyke/*` → `@agora-sdk/*` rename is scripted, not hand-edited** — produced by
    `./rename-to-agora.sh` (idempotent, re-runnable). When merging upstream, let the script convert
    any `@replyke/*` references; don't rename imports by hand.
-3. **Auth-flow behavior** (4 files, each carrying a `Modified from original @replyke/core` Apache-2.0
+3. **Auth-flow behavior** (2 files, each carrying a `Modified from original @replyke/core` Apache-2.0
    §4(b) header that must be preserved): `signUpWithEmailAndPassword` resolves to a `SignUpResult`
    union (`signed_in` | `confirmation_required`) instead of `void`; sign-out always clears local
-   state even if the server revoke fails; `useAccountSync` only persists an account once the access
-   token's `sub` matches the current `user.id` (prevents a corrupt account map on OAuth sign-in);
+   state even if the server revoke fails (`store/slices/authThunks.ts` + `hooks/auth/useAuth.ts`);
    `useAxiosPrivate` refreshes on HTTP **401** (Agora returns 401 on token expiry, 403 for
-   authorization denials) — upstream keys off 403, so don't revert it on merge.
+   authorization denials) — upstream keys off 403, so don't revert it on merge. (The old
+   `useAccountSync` sub-match guard dissolved in the v7.4.x sync — upstream shipped a better version;
+   see SYNCING.md "Previously diverged, now dissolved into upstream.")
 4. **Entity `include` passthrough** (1 file, with the `Modified from original @replyke/core` header):
    `core/src/hooks/entities/useEntityData.tsx` threads an optional `include` into the single-entity
    fetch hooks so `EntityProvider` can load related data (e.g. the author via `include={["user"]}`).

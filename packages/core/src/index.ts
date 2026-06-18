@@ -62,6 +62,8 @@ export {
   useRequestPasswordReset,
   useSendVerificationEmail,
   useVerifyEmail,
+  useRequestAccountDeletion,
+  useConfirmAccountDeletion,
   type UseAuthValues,
   type SignUpWithEmailAndPasswordProps,
   type SignInWithEmailAndPasswordProps,
@@ -70,6 +72,7 @@ export {
   type RequestPasswordResetProps,
   type SendVerificationEmailProps,
   type VerifyEmailProps,
+  type ConfirmAccountDeletionProps,
 } from "./hooks/auth";
 
 // -- authentication (accounts)
@@ -93,6 +96,15 @@ export {
   type OAuthIdentity,
   type UseOAuthIdentitiesReturn,
 } from "./hooks/auth";
+
+// -- authentication (OAuth shared helpers — consumed by platform hooks)
+export {
+  requestOAuthAuthorizationUrl,
+  parseOAuthRedirectUrl,
+  handleOAuthRedirect,
+  type OAuthRedirectParams,
+  type HandleOAuthRedirectResult,
+} from "./hooks/auth/oauthCore";
 
 // -- store internals (for platform-specific hooks in react-js / react-native)
 export { useReplykeDispatch, useReplykeSelector } from "./store/hooks";
@@ -185,6 +197,13 @@ export {
   type EntityListFetchOptions,
 } from "./hooks/entity-lists";
 
+// -- custom tables
+export {
+  useTable,
+  type UseTableOptions,
+  type UseTableValues,
+} from "./hooks/tables";
+
 // -- spaces
 export {
   useSpace,
@@ -204,6 +223,7 @@ export {
   useFetchSpaceMembers,
   useFetchSpaceTeam,
   useFetchUserSpaces,
+  useFetchMutualSpaces,
   useUpdateMemberRole,
   useApproveMember,
   useDeclineMember,
@@ -241,6 +261,7 @@ export {
   type FetchSpaceMembersProps,
   type FetchSpaceTeamProps,
   type FetchUserSpacesProps,
+  type FetchMutualSpacesProps,
   type CheckMyMembershipProps,
   type UpdateMemberRoleProps,
   type ApproveMemberProps,
@@ -485,6 +506,12 @@ export type {
 } from "./interfaces/models/Entity";
 export type { Collection } from "./interfaces/models/Collection";
 export type {
+  TableRow,
+  TableQuery,
+  DbFilter,
+  DbFilterOperator,
+} from "./interfaces/models/Table";
+export type {
   Comment,
   GifData,
   CommentInclude,
@@ -558,9 +585,6 @@ export type {
   Connection,
   EstablishedConnection,
   PendingConnection,
-  ConnectionsResponse,
-  PendingConnectionsResponse,
-  PendingConnectionListResponse,
   ConnectionRequestParams,
   ConnectionActionResponse,
   ConnectionWithdrawResponse,
@@ -586,7 +610,10 @@ export {
   useCreateDirectConversation,
   useFetchSpaceConversation,
   useConversationMembers,
+  useLiveChatMessages,
   useChatMessages,
+  useFetchManyChatMessages,
+  useFetchManyChatMessagesWrapper,
   useSendMessage,
   useEditMessage,
   useDeleteMessage,
@@ -613,8 +640,15 @@ export type {
   UseFetchSpaceConversationValues,
   UseConversationMembersProps,
   UseConversationMembersValues,
+  UseLiveChatMessagesProps,
+  UseLiveChatMessagesValues,
   UseChatMessagesProps,
   UseChatMessagesValues,
+  FetchManyChatMessagesProps,
+  FetchManyChatMessagesResponse,
+  UseFetchManyChatMessagesWrapperProps,
+  UseFetchManyChatMessagesWrapperValues,
+  MessageFilters,
   SendMessageParams,
   UseSendMessageProps,
   EditMessageParams,

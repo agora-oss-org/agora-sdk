@@ -10,5 +10,8 @@ export * from "./collectionsApi";
 // Export entity lists API
 export * from "./entityListsApi";
 
+// Export custom-tables API
+export * from "./tablesApi";
+
 // Future API exports will go here:
 // export * from "./commentsApi";

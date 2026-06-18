@@ -13,6 +13,13 @@ export interface UseEntityCommentsProps {
   limit?: number;
   defaultSortBy?: CommentsSortByOptions;
   include?: CommentIncludeParam;
+  /**
+   * Opt into per-row `spaceReputation` on embedded comment authors. Accepted
+   * forms: a space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseEntityCommentsValues {
@@ -35,7 +42,14 @@ export interface UseEntityCommentsValues {
 function useEntityComments(
   props: UseEntityCommentsProps
 ): UseEntityCommentsValues {
-  const { entityId, limit = 10, defaultSortBy = "new", include } = props;
+  const {
+    entityId,
+    limit = 10,
+    defaultSortBy = "new",
+    include,
+    spaceReputationId,
+    spaceReputationDescendants,
+  } = props;
 
   const fetchManyComments = useFetchManyComments();
 
@@ -117,6 +131,8 @@ function useEntityComments(
         sortBy,
         limit,
         include,
+        spaceReputationId,
+        spaceReputationDescendants,
       });
 
       if (response) {
@@ -131,7 +147,7 @@ function useEntityComments(
       loading.current = false;
       setLoadingState(false);
     }
-  }, [fetchManyComments, limit, sortBy, entityId]);
+  }, [fetchManyComments, limit, sortBy, entityId, include, spaceReputationId, spaceReputationDescendants]);
 
   const loadMore = () => {
     if (loading.current || !hasMore.current) return;
@@ -160,6 +176,8 @@ function useEntityComments(
           page,
           sortBy,
           limit,
+          spaceReputationId,
+          spaceReputationDescendants,
         });
 
         if (response) {

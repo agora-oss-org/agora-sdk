@@ -19,8 +19,8 @@ export interface FileImage {
   format: string;         // User-requested format
   quality: number;        // User-requested quality (1-100)
   exifStripped: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface File {
@@ -40,6 +40,6 @@ export interface File {
 
   metadata: Record<string, any>;
   image?: FileImage;      // Optional - only for type: "image"
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 }

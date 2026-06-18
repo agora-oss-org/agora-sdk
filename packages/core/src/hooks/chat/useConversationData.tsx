@@ -1,4 +1,4 @@
-import useChatMessages from "./messages/useChatMessages";
+import useLiveChatMessages from "./messages/useLiveChatMessages";
 import useSendMessage from "./messages/useSendMessage";
 import { SendMessageParams } from "./messages/useSendMessage";
 import useConversationMembers, {
@@ -48,7 +48,7 @@ export interface UseConversationDataValues {
 function useConversationData({
   conversationId,
 }: UseConversationDataProps): UseConversationDataValues {
-  const { messages, loading: messagesLoading, hasMore, loadOlder } = useChatMessages({
+  const { messages, loading: messagesLoading, hasMore, loadOlder } = useLiveChatMessages({
     conversationId,
   });
 

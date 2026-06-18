@@ -1,5 +1,5 @@
 import { ChatMessage } from "../../../interfaces/models/ChatMessage";
-import useChatMessages from "./useChatMessages";
+import useLiveChatMessages from "./useLiveChatMessages";
 import useSendMessage, { SendMessageParams } from "./useSendMessage";
 
 export interface UseMessageThreadProps {
@@ -19,7 +19,7 @@ function useMessageThread({
   conversationId,
   messageId,
 }: UseMessageThreadProps): UseMessageThreadValues {
-  const { messages, loading, hasMore, loadOlder } = useChatMessages({
+  const { messages, loading, hasMore, loadOlder } = useLiveChatMessages({
     conversationId,
     parentId: messageId,
   });

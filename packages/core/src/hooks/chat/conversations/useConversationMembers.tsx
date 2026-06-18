@@ -6,6 +6,13 @@ import { handleError } from "../../../utils/handleError";
 
 export interface UseConversationMembersProps {
   conversationId: string;
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseConversationMembersValues {
@@ -23,6 +30,8 @@ export interface UseConversationMembersValues {
 
 function useConversationMembers({
   conversationId,
+  spaceReputationId,
+  spaceReputationDescendants,
 }: UseConversationMembersProps): UseConversationMembersValues {
   const { projectId } = useProject();
   const axios = useAxiosPrivate();
@@ -36,9 +45,12 @@ function useConversationMembers({
     const fetch = async () => {
       setLoading(true);
       try {
+        const params: Record<string, any> = { limit: 100 };
+        if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
+        if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
         const response = await axios.get(
           `/${projectId}/chat/conversations/${conversationId}/members`,
-          { params: { limit: 100 } }
+          { params }
         );
         setMembers(response.data.data as ConversationMember[]);
       } catch (err) {
@@ -49,7 +61,7 @@ function useConversationMembers({
     };
 
     fetch();
-  }, [projectId, conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, conversationId, spaceReputationId, spaceReputationDescendants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addMember = useCallback(
     async ({ userId }: { userId: string }) => {

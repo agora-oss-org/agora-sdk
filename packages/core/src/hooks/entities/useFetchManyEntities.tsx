@@ -65,6 +65,13 @@ interface FetchManyEntitiesParams {
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
   include?: EntityIncludeParam;
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 function useFetchManyEntities(): (params?: FetchManyEntitiesParams) => Promise<PaginatedResponse<Entity>> {
@@ -90,6 +97,8 @@ function useFetchManyEntities(): (params?: FetchManyEntitiesParams) => Promise<P
       if (params?.spaceId) queryParams.spaceId = params.spaceId;
       if (params?.userId) queryParams.userId = params.userId;
       if (params?.followedOnly !== undefined) queryParams.followedOnly = params.followedOnly;
+      if (params?.spaceReputationId !== undefined) queryParams.spaceReputationId = params.spaceReputationId;
+      if (params?.spaceReputationDescendants !== undefined) queryParams.spaceReputationDescendants = params.spaceReputationDescendants;
 
       if (params?.include) {
         queryParams.include = Array.isArray(params.include)

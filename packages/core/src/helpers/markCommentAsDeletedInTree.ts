@@ -18,7 +18,7 @@ export function markCommentAsDeletedInTree(
       ...entry,
       comment: {
         ...entry.comment,
-        userDeletedAt: new Date(),
+        userDeletedAt: new Date().toISOString(),
         content: null,
         gif: null,
         mentions: [],

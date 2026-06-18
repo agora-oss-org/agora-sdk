@@ -10,6 +10,13 @@ export interface FetchEntityReactionsProps {
   limit?: number;
   reactionType?: ReactionType;
   sortDir?: "asc" | "desc";
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 function useFetchEntityReactions(): (props: FetchEntityReactionsProps) => Promise<PaginatedResponse<Reaction>> {
@@ -17,7 +24,7 @@ function useFetchEntityReactions(): (props: FetchEntityReactionsProps) => Promis
 
   const fetchEntityReactions = useCallback(
     async (props: FetchEntityReactionsProps): Promise<PaginatedResponse<Reaction>> => {
-      const { entityId, page, limit = 20, reactionType, sortDir = "desc" } = props;
+      const { entityId, page, limit = 20, reactionType, sortDir = "desc", spaceReputationId, spaceReputationDescendants } = props;
 
       if (page === 0) {
         throw new Error("Can't fetch reactions with page 0");
@@ -44,6 +51,8 @@ function useFetchEntityReactions(): (props: FetchEntityReactionsProps) => Promis
       if (reactionType) {
         params.reactionType = reactionType;
       }
+      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
+      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       const response = await axios.get<PaginatedResponse<Reaction>>(
         `/${projectId}/entities/${entityId}/reactions`,

@@ -7,6 +7,7 @@ import entityListsReducer from "./slices/entityListsSlice";
 import spaceListsReducer from "./slices/spaceListsSlice";
 import accountsReducer from "./slices/accountsSlice";
 import chatReducer from "./slices/chatSlice";
+import tablesReducer from "./slices/tablesSlice";
 
 /**
  * Combined reducer for all Replyke feature slices.
@@ -37,6 +38,7 @@ export const replykeReducers = combineReducers({
   spaceLists: spaceListsReducer,
   accounts: accountsReducer,
   chat: chatReducer,
+  tables: tablesReducer,
 });
 
 export type ReplykeState = ReturnType<typeof replykeReducers>;

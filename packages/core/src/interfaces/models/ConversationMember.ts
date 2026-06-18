@@ -8,13 +8,13 @@ export interface ConversationMember {
   conversationId: string;
   userId: string;
   role: ConversationMemberRole | null;
-  lastReadAt: Date | null;
+  lastReadAt: string | null;
   // Reserved for future mute functionality — no logic reads this in v1
-  mutedUntil: Date | null;
+  mutedUntil: string | null;
   isActive: boolean;
-  leftAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
+  leftAt: string | null;
+  createdAt: string;
+  updatedAt: string;
   // Populated
   user?: User;
 }

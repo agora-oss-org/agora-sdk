@@ -28,6 +28,14 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   as before. Brings the detail view in line with the entity-list (`EntityListConfig.include`) and
   comment-section hooks. Divergence from upstream Replyke (a generic fix to an upstream
   inconsistency — strong upstream-PR candidate) — see SYNCING.md #4.
+- **Synced upstream feature work through v7.4.2** (`@sublay/* → @agora-sdk/*` via `rename-to-agora.sh`).
+  New capabilities now available in `@agora-sdk/*`: custom tables (`useTable` + `tablesSlice`),
+  self-service account deletion (`useRequestAccountDeletion` / `useConfirmAccountDeletion`),
+  `useFetchMutualSpaces`, space-scoped reputation (`User.spaceReputation`, `spaceReputationId`),
+  a chat-message hook split into live (`useLiveChatMessages`) + query layers with reply filtering
+  (`useChatMessages` is now a `@deprecated` forwarder), `ConversationPreview.otherMembers` +
+  `memberIds` in `createGroup`, an Expo `useOAuthSignIn` hook, `GifData` `altText`/`aspectRatio`
+  typed as `string`, and a `vitest` test harness (`pnpm --filter @agora-sdk/core run test`).
 
 ### Fixed
 - **Chat store no longer holds a non-serializable `Date` (Redux Toolkit `serializableCheck` warning).**
@@ -38,10 +46,10 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   dates arrive as ISO **strings** over JSON. The optimistic message now stores ISO strings
   (`new Date().toISOString()`), and `ChatMessage.createdAt`/`updatedAt` are retyped `string` to match
   the wire shape (all consumers already wrap in `new Date(...)`). Store is fully serializable again;
-  optimistic and confirmed rows are identical in shape. The three touched files (`ChatMessage.ts`,
-  `Conversation.ts`, `useSendMessage.tsx`) now carry the `Modified from original @replyke/core`
-  Apache-2.0 header — a tracked divergence (#5) and, being a generic fix to an upstream bug, a strong
-  upstream-PR candidate (see SYNCING.md #5; the header is fork-only and stays out of any upstream PR).
+  optimistic and confirmed rows are identical in shape. _(Briefly tracked as fork divergence #5;
+  upstream then shipped the identical fix in v7.4.x — on the sync below we took upstream's version
+  and dropped our fork copy, so this is no longer a divergence. See SYNCING.md "Previously diverged,
+  now dissolved into upstream.")_
 
 ### Changed
 - **Synced upstream's `replyke` → `sublay` rebrand** (`git merge -s ours main`). The upstream delta
@@ -52,6 +60,19 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 - **Adopted upstream's one non-rename improvement:** a `declare const process` guard in
   `core/src/utils/env.ts`, so the `typeof process` checks typecheck without `@types/node` on
   browser/RN/Vite targets where `process` may be absent.
+- **Kept `Replyke*` internal identifiers** through the v7.4.x sync. Upstream's rebrand renamed
+  internal code identifiers (`useReplykeDispatch → useSublayDispatch`, the `replyke` Redux state key,
+  the `ReplykeProvider` export, etc.); we **decline** that rename and translate incoming `Sublay* →
+  Replyke*` on each sync (the published scope stays `@agora-sdk/*`). The naming divergence is
+  conflict-free — git keeps our names automatically — so only new upstream files need converting.
+- **Two divergences dissolved into upstream** on this sync (took upstream's version, dropped our fork
+  copy + its Apache header): chat timestamps-as-string (was #5) and the `useAccountSync` desync guard
+  (was part of #3; upstream's is better — keys off the refresh token's `sub` and covers cross-tab
+  swaps). See SYNCING.md "Previously diverged, now dissolved into upstream."
+- **Relocated the base-URL repoint (#1) for OAuth** into the new `core/src/hooks/auth/oauthCore.ts`:
+  `requestOAuthAuthorizationUrl` now defaults `baseUrl` to `getApiBaseUrl()` instead of upstream's
+  hardcoded `https://api.sublay.io/v7`, so self-hosted Agora OAuth follows the injected base URL. The
+  `react-js`/`expo` `useOAuthSignIn` hooks call into `oauthCore`, so they inherit the repoint.
 
 ## [1.2.2] - 2026-05-31
 

@@ -6,6 +6,13 @@ import useAxiosPrivate from "../../config/useAxiosPrivate";
 export interface FetchEntityProps {
   entityId: string;
   include?: EntityIncludeParam;
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 function useFetchEntity(): (props: FetchEntityProps) => Promise<Entity> {
@@ -13,7 +20,7 @@ function useFetchEntity(): (props: FetchEntityProps) => Promise<Entity> {
   const { projectId } = useProject();
 
   const fetchEntity = useCallback(
-    async ({ entityId, include }: FetchEntityProps) => {
+    async ({ entityId, include, spaceReputationId, spaceReputationDescendants }: FetchEntityProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -22,10 +29,15 @@ function useFetchEntity(): (props: FetchEntityProps) => Promise<Entity> {
         throw new Error("Please pass an entityId");
       }
 
+      const params: Record<string, any> = {
+        include: Array.isArray(include) ? include.join(",") : include,
+      };
+      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
+      if (spaceReputationDescendants !== undefined)
+        params.spaceReputationDescendants = spaceReputationDescendants;
+
       const response = await axios.get(`/${projectId}/entities/${entityId}`, {
-        params: {
-          include: Array.isArray(include) ? include.join(",") : include,
-        },
+        params,
       });
 
       return response.data as Entity;

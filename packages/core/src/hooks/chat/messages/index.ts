@@ -1,5 +1,27 @@
+// Live, store-backed conversation view
+export { default as useLiveChatMessages } from "./useLiveChatMessages";
+export type {
+  UseLiveChatMessagesProps,
+  UseLiveChatMessagesValues,
+} from "./useLiveChatMessages";
+
+// Deprecated alias — use useLiveChatMessages
 export { default as useChatMessages } from "./useChatMessages";
 export type { UseChatMessagesProps, UseChatMessagesValues } from "./useChatMessages";
+
+// Stateless / query message fetchers
+export { default as useFetchManyChatMessages } from "./useFetchManyChatMessages";
+export type {
+  FetchManyChatMessagesProps,
+  FetchManyChatMessagesResponse,
+  MessageFilters,
+} from "./useFetchManyChatMessages";
+
+export { default as useFetchManyChatMessagesWrapper } from "./useFetchManyChatMessagesWrapper";
+export type {
+  UseFetchManyChatMessagesWrapperProps,
+  UseFetchManyChatMessagesWrapperValues,
+} from "./useFetchManyChatMessagesWrapper";
 
 export { default as useSendMessage } from "./useSendMessage";
 export type { SendMessageParams, UseSendMessageProps } from "./useSendMessage";

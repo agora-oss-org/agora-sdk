@@ -5,6 +5,9 @@ import { ReplykeProvider as OriginalReplykeProvider } from "@agora-sdk/core";
 export * from "@agora-sdk/core";
 import AccountManager from "./AccountManager";
 
+// Expo-specific OAuth hook (system browser + deep-link return)
+export { default as useOAuthSignIn, type UseOAuthSignInReturn } from "./hooks/useOAuthSignIn";
+
 // Override ReplykeProvider
 export const ReplykeProvider: React.FC<{
   projectId: string;

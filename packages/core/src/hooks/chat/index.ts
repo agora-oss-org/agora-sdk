@@ -26,7 +26,10 @@ export type {
 
 // Message hooks
 export {
+  useLiveChatMessages,
   useChatMessages,
+  useFetchManyChatMessages,
+  useFetchManyChatMessagesWrapper,
   useSendMessage,
   useEditMessage,
   useDeleteMessage,
@@ -34,8 +37,15 @@ export {
   useMessageThread,
 } from "./messages";
 export type {
+  UseLiveChatMessagesProps,
+  UseLiveChatMessagesValues,
   UseChatMessagesProps,
   UseChatMessagesValues,
+  FetchManyChatMessagesProps,
+  FetchManyChatMessagesResponse,
+  UseFetchManyChatMessagesWrapperProps,
+  UseFetchManyChatMessagesWrapperValues,
+  MessageFilters,
   SendMessageParams,
   UseSendMessageProps,
   EditMessageParams,

@@ -50,6 +50,8 @@ interface FetchEntitiesOptions {
   spaceId?: string | null;
   limit: number;
   include?: EntityIncludeParam | null;
+  spaceReputationId?: string | null;
+  spaceReputationDescendants?: boolean | null;
 }
 
 interface CreateEntityOptions {
@@ -131,6 +133,8 @@ export function useEntityListActions(): UseEntityListActionsValues {
           contentFilters: options.contentFilters,
           attachmentsFilters: options.attachmentsFilters,
           include: options.include,
+          spaceReputationId: options.spaceReputationId,
+          spaceReputationDescendants: options.spaceReputationDescendants,
         }).unwrap();
 
         if (result) {

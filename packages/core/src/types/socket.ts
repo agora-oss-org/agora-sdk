@@ -13,12 +13,12 @@ export interface ServerToClientEvents {
     gif: ChatMessage["gif"];
     mentions: ChatMessage["mentions"];
     metadata: Record<string, any>;
-    editedAt: Date | null;
+    editedAt: string | null;
   }) => void;
   "message:deleted": (payload: {
     messageId: string;
     conversationId: string;
-    userDeletedAt: Date;
+    userDeletedAt: string;
   }) => void;
   "message:removed": (payload: {
     messageId: string;

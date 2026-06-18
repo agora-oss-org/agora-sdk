@@ -175,6 +175,8 @@ function useEntityList({
           spaceId: configWithDefaults.spaceId,
           limit: configWithDefaults.limit,
           include: configWithDefaults.include,
+          spaceReputationId: configWithDefaults.spaceReputationId,
+          spaceReputationDescendants: configWithDefaults.spaceReputationDescendants,
         };
 
         // Build final filters by taking current state and applying new filters
@@ -259,6 +261,8 @@ function useEntityList({
             sourceId: currentConfig.sourceId,
             spaceId: currentConfig.spaceId,
             include: currentConfig.include,
+            spaceReputationId: currentConfig.spaceReputationId,
+            spaceReputationDescendants: currentConfig.spaceReputationDescendants,
           });
         } catch (err) {
           console.error(
@@ -330,6 +334,8 @@ function useEntityList({
         sourceId: config.sourceId,
         spaceId: config.spaceId,
         include: config.include,
+        spaceReputationId: config.spaceReputationId,
+        spaceReputationDescendants: config.spaceReputationDescendants,
       });
     } catch (err) {
       console.error(

@@ -29,6 +29,13 @@ export interface UseFetchManyEntitiesWrapperProps {
   attachmentsFilters?: AttachmentsFilters | null;
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
+  /**
+   * Opt into per-row `spaceReputation` on embedded authors. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseFetchManyEntitiesWrapperValues {
@@ -67,6 +74,8 @@ function useFetchManyEntitiesWrapper(
     attachmentsFilters,
     locationFilters,
     metadataFilters,
+    spaceReputationId,
+    spaceReputationDescendants,
   } = props;
   const fetchManyEntities = useFetchManyEntities();
 
@@ -112,6 +121,8 @@ function useFetchManyEntitiesWrapper(
         attachmentsFilters,
         locationFilters,
         metadataFilters,
+        spaceReputationId,
+        spaceReputationDescendants,
       });
 
       if (response) {
@@ -145,6 +156,8 @@ function useFetchManyEntitiesWrapper(
     attachmentsFilters,
     locationFilters,
     metadataFilters,
+    spaceReputationId,
+    spaceReputationDescendants,
   ]);
 
   const loadMore = () => {
@@ -183,6 +196,8 @@ function useFetchManyEntitiesWrapper(
           attachmentsFilters,
           locationFilters,
           metadataFilters,
+          spaceReputationId,
+          spaceReputationDescendants,
         });
 
         if (response) {
@@ -223,6 +238,8 @@ function useFetchManyEntitiesWrapper(
     attachmentsFilters,
     locationFilters,
     metadataFilters,
+    spaceReputationId,
+    spaceReputationDescendants,
   ]);
 
   return {

@@ -36,6 +36,8 @@ export { default as useFetchSpaceTeam } from "./useFetchSpaceTeam";
 export type { FetchSpaceTeamProps } from "./useFetchSpaceTeam";
 export { default as useFetchUserSpaces } from "./useFetchUserSpaces";
 export type { FetchUserSpacesProps } from "./useFetchUserSpaces";
+export { default as useFetchMutualSpaces } from "./useFetchMutualSpaces";
+export type { FetchMutualSpacesProps } from "./useFetchMutualSpaces";
 export { default as useCheckMyMembership } from "./useCheckMyMembership";
 export type { CheckMyMembershipProps } from "./useCheckMyMembership";
 

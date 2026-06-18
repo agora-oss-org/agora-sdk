@@ -18,6 +18,14 @@ export interface UseSearchContentProps {
   spaceId?: string;
   conversationId?: string;
   limit?: number;
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`. Sent as a query param (the server
+   * reads it from the query string, not the request body).
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseSearchContentReturn {
@@ -37,16 +45,20 @@ export default function useSearchContent(): UseSearchContentReturn {
   const [error, setError] = useState<string | null>(null);
 
   const search = useCallback(
-    async ({ query, sourceTypes, spaceId, conversationId, limit }: UseSearchContentProps) => {
+    async ({ query, sourceTypes, spaceId, conversationId, limit, spaceReputationId, spaceReputationDescendants }: UseSearchContentProps) => {
       if (!projectId) return;
       if (!query.trim()) return;
 
       setLoading(true);
       setError(null);
       try {
+        const params: Record<string, any> = {};
+        if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
+        if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
         const response = await axios.post<ContentSearchResult[]>(
           `/${projectId}/search/content`,
-          { query, sourceTypes, spaceId, conversationId, limit }
+          { query, sourceTypes, spaceId, conversationId, limit },
+          { params }
         );
         setResults(response.data);
       } catch (err) {

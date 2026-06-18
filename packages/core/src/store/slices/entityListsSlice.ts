@@ -29,6 +29,8 @@ export interface EntityListState {
   spaceId: string | null;
   limit: number;
   include: EntityIncludeParam | null;
+  spaceReputationId: string | null;
+  spaceReputationDescendants: boolean | null;
 
   // Filter/sort state (user-controlled filters only)
   sortBy: EntityListSortByOptions;
@@ -65,6 +67,8 @@ const createDefaultEntityListState = (): EntityListState => ({
   spaceId: null,
   limit: 10,
   include: null,
+  spaceReputationId: null,
+  spaceReputationDescendants: null,
 
   // Default filters (user-controlled only)
   sortBy: "hot",
@@ -115,6 +119,13 @@ export interface EntityListConfig {
   spaceId?: string | null;
   limit?: number;
   include?: EntityIncludeParam | null;
+  /**
+   * Opt into per-row `spaceReputation` on embedded authors. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string | null;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean | null;
 }
 
 // Options for entity list operations
@@ -243,6 +254,12 @@ export const entityListsSlice = createSlice({
         }
         if (config.include !== undefined) {
           list.include = config.include;
+        }
+        if (config.spaceReputationId !== undefined) {
+          list.spaceReputationId = config.spaceReputationId;
+        }
+        if (config.spaceReputationDescendants !== undefined) {
+          list.spaceReputationDescendants = config.spaceReputationDescendants;
         }
       }
 
@@ -532,6 +549,8 @@ export const selectEntityListConfig = createSelector(
     spaceId: string | null;
     limit: number;
     include: EntityIncludeParam | null;
+    spaceReputationId: string | null;
+    spaceReputationDescendants: boolean | null;
   } | null => {
     if (!entityList) return null;
 
@@ -540,6 +559,8 @@ export const selectEntityListConfig = createSelector(
       spaceId: entityList.spaceId,
       limit: entityList.limit,
       include: entityList.include,
+      spaceReputationId: entityList.spaceReputationId,
+      spaceReputationDescendants: entityList.spaceReputationDescendants,
     };
   }
 );

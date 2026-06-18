@@ -8,8 +8,10 @@ export interface GifData {
   url: string;
   gifUrl: string;
   gifPreviewUrl: string;
-  altText: string | undefined;
-  aspectRatio: number;
+  // The server's gif schema requires both as strings (aspectRatio is a string,
+  // e.g. "1.5", not a number).
+  altText: string;
+  aspectRatio: string;
 }
 
 export interface Comment {
@@ -31,16 +33,16 @@ export interface Comment {
   userReaction?: ReactionType | null; // v7 - current user's reaction (populated when authenticated)
   repliesCount: number; // Count of replies
   metadata: Record<string, any>; // JSON object that could contain any other data about the comment which is relevant. Limited to 10KB size.
-  createdAt: Date; // Timestamp for creation
-  updatedAt: Date; // Timestamp for updating
-  deletedAt: Date | null; // Timestamp for updating
+  createdAt: string; // Timestamp for creation
+  updatedAt: string; // Timestamp for updating
+  deletedAt: string | null; // Timestamp for updating
   // Legacy v6 field: set on children when their parent was paranoid-deleted.
   // Not used by v7 (which uses userDeletedAt). Can be removed once v6 is
   // retired and legacy data is cleaned up.
-  parentDeletedAt: Date | null;
-  userDeletedAt: Date | null; // Timestamp for user-initiated deletion (Reddit-style placeholder)
+  parentDeletedAt: string | null;
+  userDeletedAt: string | null; // Timestamp for user-initiated deletion (Reddit-style placeholder)
   moderationStatus: "approved" | "removed" | null;
-  moderatedAt: Date | null;
+  moderatedAt: string | null;
   moderatedById: string | null;
   moderatedByType: "client" | "user" | null;
   moderationReason: string | null;

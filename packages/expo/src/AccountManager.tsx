@@ -2,7 +2,9 @@ import * as SecureStore from "expo-secure-store";
 import { useAccountSync, useProject, handleError } from "@agora-sdk/core";
 import type { AccountStorage, AccountMap } from "@agora-sdk/core";
 
-const STORAGE_KEY_PREFIX = "replyke-accounts:";
+// expo-secure-store rejects keys containing `:` on iOS — keys must match
+// /^[A-Za-z0-9._-]+$/. Use `_` as the separator instead.
+const STORAGE_KEY_PREFIX = "replyke-accounts_";
 
 const secureStoreStorage: AccountStorage = {
   async getAccountMap(projectId: string): Promise<AccountMap | null> {

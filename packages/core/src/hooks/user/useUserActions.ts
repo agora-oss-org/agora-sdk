@@ -61,7 +61,10 @@ export function useUserActions() {
       if (update.name !== undefined) optimisticUpdate.name = update.name;
       if (update.username !== undefined) optimisticUpdate.username = update.username;
       if (update.bio !== undefined) optimisticUpdate.bio = update.bio;
-      if (update.birthdate !== undefined) optimisticUpdate.birthdate = update.birthdate;
+      if (update.birthdate !== undefined)
+        optimisticUpdate.birthdate = update.birthdate
+          ? update.birthdate.toISOString()
+          : update.birthdate;
       if (update.metadata !== undefined) optimisticUpdate.metadata = update.metadata;
       // Only apply avatar optimistically if it's a string URL (not a file upload)
       if (typeof update.avatar === 'string' || update.avatar === null) {

@@ -1,10 +1,3 @@
-// Modified from the original @replyke/core source.
-// Modifications Copyright 2026 Jenova Marie — the optimistic message's `createdAt`/`updatedAt` are
-// now ISO strings (`new Date().toISOString()`) instead of a live `Date`. That `Date` was the only
-// non-serializable value entering the chat store, tripping RTK's serializableCheck on
-// `addOptimisticMessage`; matching the server's wire shape keeps optimistic and confirmed rows
-// identical and the store fully serializable.
-// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useCallback } from "react";
 import { useReplykeDispatch, useReplykeSelector } from "../../../store/hooks";
 import {
@@ -29,6 +22,17 @@ export interface SendMessageParams {
   quotedMessageId?: string | null;
   parentMessageId?: string | null;
   files?: File[];
+  /**
+   * Opt into `spaceReputation` on the enriched sender returned in the response.
+   * Accepted forms: a space `<uuid>`, `"none"`, or `"context"`. Sent as a query
+   * param so it works for both the JSON and multipart request shapes.
+   */
+  spaceReputationId?: string;
+  /**
+   * Include reputation accrued in descendant spaces. Only honored when
+   * `spaceReputationId` is an explicit `<uuid>`.
+   */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseSendMessageProps {
@@ -56,16 +60,19 @@ function useSendMessage({
       quotedMessageId,
       parentMessageId,
       files,
+      spaceReputationId,
+      spaceReputationDescendants,
     }: SendMessageParams): Promise<ChatMessage> => {
       if (!projectId) throw new Error("No projectId available.");
       if (!conversationId) throw new Error("No conversationId provided.");
 
+      const reputationParams: Record<string, any> = {};
+      if (spaceReputationId !== undefined)
+        reputationParams.spaceReputationId = spaceReputationId;
+      if (spaceReputationDescendants !== undefined)
+        reputationParams.spaceReputationDescendants = spaceReputationDescendants;
+
       const localId = crypto.randomUUID();
-      // ISO string, NOT a Date object: the server sends createdAt/updatedAt as JSON strings, so the
-      // confirmed message that replaces this one carries strings. Minting a live Date here was the
-      // only place a non-serializable value entered the chat store, tripping Redux Toolkit's
-      // serializableCheck on the addOptimisticMessage action; matching the wire shape keeps the
-      // optimistic and confirmed rows identical and the store fully serializable.
       const now = new Date().toISOString();
 
       // Insert optimistic message immediately
@@ -116,7 +123,7 @@ function useSendMessage({
           response = await axios.post(
             `/${projectId}/chat/conversations/${conversationId}/messages`,
             formData,
-            { headers: { "Content-Type": "multipart/form-data" } }
+            { headers: { "Content-Type": "multipart/form-data" }, params: reputationParams }
           );
         } else {
           // JSON body for text/gif-only messages
@@ -130,7 +137,8 @@ function useSendMessage({
               ...(metadata !== undefined && { metadata }),
               ...(quotedMessageId !== undefined && { quotedMessageId }),
               ...(parentMessageId !== undefined && { parentMessageId }),
-            }
+            },
+            { params: reputationParams }
           );
         }
 

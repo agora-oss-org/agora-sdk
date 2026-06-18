@@ -14,19 +14,23 @@ upstream's improvements painless.
 | **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
-## What diverges from upstream (five things)
+## What diverges from upstream (four things)
 
 1. **Base-URL repoint** — committed code on `agora`, 4 files:
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
-   (`BASE_URL = getApiBaseUrl()`), `core/src/context/chat-context.tsx` (socket fallback),
-   `react-js/src/hooks/useOAuthSignIn.ts`. Everything else derives from `getApiBaseUrl()`.
-   `env.ts` additionally carries a `declare const process` guard (adopted from upstream during the
-   sublay-rebrand sync) so the `typeof process` checks typecheck without `@types/node`.
+   (`BASE_URL = getApiBaseUrl()`), `core/src/context/chat-context.tsx` (socket fallback via
+   `getSocketUrl()`), and `core/src/hooks/auth/oauthCore.ts` (the OAuth `requestOAuthAuthorizationUrl`
+   defaults `baseUrl` to `getApiBaseUrl()` instead of upstream's hardcoded `api.sublay.io` host —
+   carries a `Modified from original @replyke/core` header). The platform OAuth hooks
+   (`react-js`/`expo` `useOAuthSignIn`) call into `oauthCore`, so they inherit the repoint and need
+   no edit of their own. Everything else derives from `getApiBaseUrl()`. `env.ts` additionally
+   carries a `declare const process` guard (adopted from upstream during the sublay-rebrand sync) so
+   the `typeof process` checks typecheck without `@types/node`.
 2. **`@replyke/*` → `@agora-sdk/*` rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
    (idempotent, re-runnable). Upstream rebranded `@replyke/*` → `@sublay/*` (merged into `agora` via
    `-s ours`, content declined), so the script now converts **both** `@replyke/` and `@sublay/`
    quoted imports → `@agora-sdk/`. Keeping it scripted is what makes upstream merges cheap.
-3. **Auth-flow behavior** — hand edits in 4 files, each marked with a `Modified from original
+3. **Auth-flow behavior** — hand edits in 3 files, each marked with a `Modified from original
    @replyke/core` header (Apache-2.0 §4(b)):
    - `core/src/store/slices/authThunks.ts` + `core/src/hooks/auth/useAuth.ts`:
      `signUpWithEmailAndPassword` resolves to a **`SignUpResult`** (`{ status: "signed_in" }` |
@@ -36,9 +40,6 @@ upstream's improvements painless.
    - `core/src/store/slices/authThunks.ts`: sign-out now **always clears local auth state** even
      if the server-side revoke fails (a stale/expired refresh token must not strand the user
      signed in).
-   - `core/src/hooks/auth/useAccountSync.ts`: only persist an account entry once the access
-     token's `sub` matches the current `user.id`, preventing a **corrupt account map** (two ids
-     sharing one refresh token) during the transient token/user desync on OAuth sign-in.
    - `core/src/config/useAxiosPrivate.ts`: the reactive refresh interceptor triggers on **HTTP
      401**, not upstream's 403. The Agora server returns **401** for an expired/invalid access
      token (the spec-compliant code per RFC 9110 / RFC 6750) and reserves **403** for genuine
@@ -64,19 +65,21 @@ upstream's improvements painless.
    This is a generic fix to an inconsistency in upstream Replyke itself (the fetch hooks already take
    `include`; only `useEntityData` failed to thread it). **Strong upstream-PR candidate** — if
    contributed to Replyke it dissolves on the next merge.
-5. **Chat date fields as ISO strings** — hand edits in 3 files, each marked with a `Modified from
-   original @replyke/core` header:
-   - `core/src/interfaces/models/ChatMessage.ts`: `createdAt`/`updatedAt` retyped `Date → string`.
-   - `core/src/interfaces/models/Conversation.ts`: `lastMessageAt` retyped `Date | null → string | null`.
-   - `core/src/hooks/chat/messages/useSendMessage.tsx`: the optimistic message stores
-     `new Date().toISOString()` instead of a live `Date`.
 
-   The server sends these timestamps as ISO **strings** over JSON; the live `Date` minted in the
-   optimistic-send path was the only non-serializable value entering the Redux chat store, tripping
-   RTK's `serializableCheck` on `chat/addOptimisticMessage`. Retyping to `string` matches the wire
-   shape (consumers already wrap in `new Date(...)` at the point of use). This is a generic fix to an
-   upstream bug — **strong upstream-PR candidate** (the header is fork-only and must NOT go in the
-   upstream PR); if contributed to Replyke it dissolves on the next merge.
+### Previously diverged, now dissolved into upstream
+
+These were tracked divergences that upstream later implemented independently; on the sync that
+brought them in we took upstream's version and dropped our fork copy (and its header). Recorded here
+so the history is legible — **do not re-add them**:
+
+- **Chat timestamps as ISO strings** (was #5). Upstream's `fix/core-timestamps-as-string` retyped
+  `ChatMessage.createdAt/updatedAt` and `Conversation.lastMessageAt` to `string` and switched the
+  optimistic send to `new Date().toISOString()` — identical to our fork fix. Dissolved in the v7.4.x
+  sync.
+- **Account-sync desync guard** (was part of #3, `useAccountSync.ts`). Upstream shipped the same
+  corrupt-account-map guard and **improved** it (keys off the *refresh* token's `sub`, not the access
+  token's, and also covers cross-tab account swaps). We took theirs verbatim. Dissolved in the v7.4.x
+  sync.
 
 ## Sync workflow
 

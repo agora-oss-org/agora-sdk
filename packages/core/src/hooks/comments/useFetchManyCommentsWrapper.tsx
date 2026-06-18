@@ -12,6 +12,13 @@ export interface UseFetchManyCommentsWrapperProps {
   limit?: number;
   include?: CommentIncludeParam;
   defaultSortBy?: CommentsSortByOptions;
+  /**
+   * Opt into per-row `spaceReputation` on embedded comment authors. Accepted
+   * forms: a space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseFetchManyCommentsWrapperValues {
@@ -34,6 +41,8 @@ function useFetchManyCommentsWrapper(
     limit = 10,
     defaultSortBy = "new",
     include,
+    spaceReputationId,
+    spaceReputationDescendants,
   } = props;
   const fetchManyComments = useFetchManyComments();
 
@@ -70,6 +79,8 @@ function useFetchManyCommentsWrapper(
         sortBy,
         limit,
         include,
+        spaceReputationId,
+        spaceReputationDescendants,
       });
 
       if (response) {
@@ -93,6 +104,8 @@ function useFetchManyCommentsWrapper(
     parentId,
     sourceId,
     include,
+    spaceReputationId,
+    spaceReputationDescendants,
   ]);
 
   const loadMore = () => {
@@ -121,6 +134,8 @@ function useFetchManyCommentsWrapper(
           sortBy,
           limit,
           include,
+          spaceReputationId,
+          spaceReputationDescendants,
         });
 
         if (response) {
@@ -151,6 +166,8 @@ function useFetchManyCommentsWrapper(
     sortBy,
     limit,
     include,
+    spaceReputationId,
+    spaceReputationDescendants,
   ]);
 
   return {

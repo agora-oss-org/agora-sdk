@@ -26,7 +26,7 @@ interface FetchCollectionEntitiesResponse {
   data: Entity[];
   pagination: {
     page: number;
-    limit: number;
+    pageSize: number;
     totalPages: number;
     totalItems: number;
     hasMore: boolean;

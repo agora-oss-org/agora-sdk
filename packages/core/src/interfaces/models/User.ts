@@ -15,7 +15,7 @@ export type UserFull = {
   avatarFile?: File | null;
   bannerFile?: File | null;
   bio: string | null; // limited to 300 characters
-  birthdate: Date | null;
+  birthdate: string | null;
   location: {
     type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
@@ -23,19 +23,20 @@ export type UserFull = {
   metadata: Record<string, any>; // JSON object that could contain any other data about the user which is relevant to the project. Limited to 10KB size.
   secureMetadata: Record<string, any>; // Same as metadata only it is excluded when user is added to entity and comment data
   reputation: number; // Automatically managed by replyke based on usr activity
+  spaceReputation?: number; // Per-space reputation, present only when a request opts in via `spaceReputationId`
   isVerified: boolean; // Whether the user is verified
   isActive: boolean; // Whether the user account is active
-  lastActive: Date; // Timestamp for last activity
-  createdAt: Date;
-  updatedAt: Date;
+  lastActive: string; // Timestamp for last activity
+  createdAt: string;
+  updatedAt: string;
 };
 
 // These are the details the get delivered to the authenticated user's client (about themselves)
 export type AuthUser = Omit<UserFull, "secureMetadata"> & {
   suspensions: {
     reason: string | null;
-    startDate: Date;
-    endDate: Date | null;
+    startDate: string;
+    endDate: string | null;
   }[];
   authMethods: string[]; // e.g. ["password", "google", "github"]
 };

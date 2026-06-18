@@ -1,9 +1,3 @@
-// Modified from the original @replyke/core source.
-// Modifications Copyright 2026 Jenova Marie — `createdAt`/`updatedAt` retyped from `Date` to
-// `string`. The server sends these as ISO strings over JSON and the optimistic-send path mirrors
-// that; typing them `string` keeps values in the Redux chat store serializable (RTK
-// serializableCheck). Consumers wrap in `new Date(...)` at the point of use.
-// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { GifData } from "./Comment";
 import { File } from "./File";
 import { Mention } from "./Mention";
@@ -32,16 +26,13 @@ export interface ChatMessage {
   reactionCounts: Record<string, number>;
   // emojis the requesting user has reacted with on this message (computed server-side)
   userReactions: string[];
-  editedAt: Date | null;
-  userDeletedAt: Date | null;
+  editedAt: string | null;
+  userDeletedAt: string | null;
   moderationStatus: "approved" | "removed" | null;
-  moderatedAt: Date | null;
+  moderatedAt: string | null;
   moderatedById: string | null;
   moderatedByType: "client" | "user" | null;
   moderationReason: string | null;
-  // ISO strings over the wire (JSON) — the server never sends Date objects, and the optimistic-send
-  // path mirrors that. Consumers wrap in `new Date(createdAt)` at the point of use. Kept as `string`
-  // (not `Date`) so values in the Redux store stay serializable (RTK serializableCheck).
   createdAt: string;
   updatedAt: string;
 

@@ -26,6 +26,10 @@ export interface UseConversationsValues {
   createGroup: (params: {
     name?: string;
     metadata?: Record<string, unknown>;
+    // Initial members to add at creation time (the server creates their member
+    // rows in the same transaction). The creator is added as admin automatically
+    // and is de-duplicated server-side if present here.
+    memberIds?: string[];
   }) => Promise<ConversationPreview>;
 }
 
@@ -133,6 +137,7 @@ function useConversations({
     async (params: {
       name?: string;
       metadata?: Record<string, unknown>;
+      memberIds?: string[];
     }): Promise<ConversationPreview> => {
       if (!projectId) throw new Error("No project ID");
 

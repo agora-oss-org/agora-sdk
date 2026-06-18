@@ -1,21 +1,12 @@
-// Modified from the original @replyke/react-js source.
-// Modifications Copyright 2026 Jenova Marie — repointed the hardcoded Replyke OAuth
-// base URL to a self-hosted, Replyke-compatible Agora backend.
-// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
-
 import { useCallback, useState } from "react";
 import {
   useProject,
   useReplykeDispatch,
   useReplykeSelector,
-  setTokens,
-  setInitialized,
   selectAccessToken,
-  requestNewAccessTokenThunk,
-  getApiBaseUrl,
+  requestOAuthAuthorizationUrl,
+  handleOAuthRedirect,
 } from "@agora-sdk/core";
-
-// Base URL is injected at runtime (<ReplykeProvider baseUrl>), so read it at request time.
 
 export interface UseOAuthSignInReturn {
   /** Initiate OAuth sign-in / sign-up (unauthenticated). */
@@ -69,33 +60,18 @@ function useOAuthSignIn(): UseOAuthSignInReturn {
       try {
         const redirect = redirectAfterAuth || window.location.href;
 
-        // /authorize is unauthenticated, /link requires the access token
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        if (endpoint === "link") {
-          headers["Authorization"] = `Bearer ${accessToken}`;
-        }
-
-        const response = await fetch(
-          `${getApiBaseUrl()}/${projectId}/oauth/${endpoint}`,
-          {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ provider, redirectAfterAuth: redirect }),
-          }
-        );
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to initiate OAuth");
-        }
-
-        const data = await response.json();
+        const authorizationUrl = await requestOAuthAuthorizationUrl({
+          projectId,
+          endpoint,
+          provider,
+          redirectAfterAuth: redirect,
+          // /authorize is unauthenticated; /link requires the access token.
+          accessToken: endpoint === "link" ? accessToken ?? null : null,
+        });
 
         // Redirect browser to provider's authorization page.
         // isLoading intentionally stays true since we're navigating away.
-        window.location.href = data.authorizationUrl;
+        window.location.href = authorizationUrl;
       } catch (err: any) {
         setError(err.message);
         setIsLoading(false);
@@ -117,36 +93,26 @@ function useOAuthSignIn(): UseOAuthSignInReturn {
   );
 
   const handleOAuthCallback = useCallback((): boolean => {
-    // Tokens arrive in the URL fragment (#accessToken=...&refreshToken=...)
-    // Errors arrive in query params (?error=...&error_description=...)
-    const hash = window.location.hash.substring(1); // Remove leading #
-    const fragmentParams = new URLSearchParams(hash);
-    const queryParams = new URLSearchParams(window.location.search);
+    // The full href carries both halves: tokens in the fragment
+    // (#accessToken=...&refreshToken=...) and errors in the query
+    // (?error=...&error_description=...). The core tail parses + dispatches;
+    // the hook owns the web-specific error state and URL cleanup.
+    const { success, error: redirectError } = handleOAuthRedirect({
+      url: window.location.href,
+      dispatch,
+      projectId,
+    });
 
-    const fragmentAccessToken = fragmentParams.get("accessToken");
-    const refreshToken = fragmentParams.get("refreshToken");
-    const oauthError = queryParams.get("error");
-
-    if (oauthError) {
-      setError(queryParams.get("error_description") || oauthError);
+    if (redirectError) {
+      setError(redirectError);
       // Clean URL
       window.history.replaceState({}, "", window.location.pathname);
       return false;
     }
 
-    if (fragmentAccessToken && refreshToken) {
-      // Store tokens in Redux. The AccountManager (via useAccountSync)
-      // will detect the new tokens and persist them to localStorage.
-      dispatch(setTokens({ accessToken: fragmentAccessToken, refreshToken }));
-      dispatch(setInitialized(true));
-
-      // Fetch user profile so useAccountSync can persist the account.
-      // The thunk reads the just-set refresh token from Redux, calls the
-      // server, and dispatches setUser + setUserInUserSlice on success.
-      if (projectId) {
-        dispatch(requestNewAccessTokenThunk({ projectId }));
-      }
-
+    if (success) {
+      // Tokens were stored in Redux; the AccountManager (via useAccountSync)
+      // will detect them and persist them to localStorage.
       // Clean URL (remove fragment with tokens)
       window.history.replaceState({}, "", window.location.pathname);
       return true;

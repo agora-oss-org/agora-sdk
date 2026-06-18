@@ -14,6 +14,13 @@ export interface FetchManyCommentsProps {
   limit?: number;
   include?: CommentIncludeParam;
   sourceId?: string | null | undefined;
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`.
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<PaginatedResponse<Comment>> {
@@ -31,6 +38,8 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
         limit,
         include,
         sourceId,
+        spaceReputationId,
+        spaceReputationDescendants,
       } = props;
 
       if (page === 0) {
@@ -55,6 +64,8 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
       if (userId) params.userId = userId;
       if (parentId) params.parentId = parentId;
       if (sourceId) params.sourceId = sourceId;
+      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
+      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       if (include) {
         params.include = Array.isArray(include) ? include.join(',') : include;

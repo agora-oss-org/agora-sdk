@@ -39,7 +39,7 @@ export interface Entity {
   // sharesCount: number;
   views: number; // A number representing a count of how many views the entity received
   score: number; // A "hotness" score of ths entity. Automatically generated based on activity
-  scoreUpdatedAt: Date; // Last tme the score was updated
+  scoreUpdatedAt: string; // Last tme the score was updated
   location: {
     type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
@@ -47,12 +47,12 @@ export interface Entity {
   metadata: Record<string, any>; // JSON object that could contain any other data about the entity which is relevant to the project. Limited to 10KB size.
   topComment: TopComment | null; // Optional field for top comment. As long as there is at least one comment it will be populated
   isSaved?: boolean; // Optional field populated when include contains "saved" - indicates if current user saved this entity
-  createdAt: Date; // Use camelCase for `created_at`
-  updatedAt: Date; // Use camelCase for `updated_at`
-  deletedAt: Date | null; // Use camelCase for `updated_at`
+  createdAt: string; // Use camelCase for `created_at`
+  updatedAt: string; // Use camelCase for `updated_at`
+  deletedAt: string | null; // Use camelCase for `updated_at`
   isDraft: boolean | null;
   moderationStatus: "approved" | "removed" | null;
-  moderatedAt: Date | null;
+  moderatedAt: string | null;
   moderatedById: string | null;
   moderatedByType: "client" | "user" | null;
   moderationReason: string | null;

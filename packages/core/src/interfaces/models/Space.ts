@@ -59,9 +59,9 @@ export interface Space {
   metadata: Record<string, any>;
 
   // Timestamps
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 
   // Computed fields
   membersCount: number;
@@ -92,7 +92,7 @@ export interface UserSpaceItem {
     membershipId: string;
     role: SpaceMemberRole;
     status: SpaceMemberStatus;
-    joinedAt: Date;
+    joinedAt: string;
   };
 }
 
@@ -107,7 +107,7 @@ export interface JoinSpaceResponse {
     userId: string;
     role: "member";
     status: "pending" | "active";
-    joinedAt: Date;
+    joinedAt: string;
   };
 }
 
@@ -121,7 +121,7 @@ export interface UpdateMemberRoleResponse {
     id: string;
     role: SpaceMemberRole;
     status: string;
-    joinedAt: Date;
+    joinedAt: string;
     userId: string;
   };
 }
@@ -131,7 +131,7 @@ export interface ApproveMemberResponse {
   membership: {
     id: string;
     status: "active";
-    joinedAt: Date;
+    joinedAt: string;
   };
 }
 
@@ -147,7 +147,7 @@ export interface CheckMyMembershipResponse {
   isMember: boolean;
   role: "admin" | "moderator" | "member" | null;
   status: "pending" | "active" | "banned" | "rejected" | null;
-  joinedAt: Date | null;
+  joinedAt: string | null;
   permissions: {
     canPost: boolean;
     canModerate: boolean;

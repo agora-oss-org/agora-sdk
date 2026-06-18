@@ -15,6 +15,14 @@ export interface UseAskContentProps {
   spaceId?: string;
   conversationId?: string;
   limit?: number;
+  /**
+   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
+   * space `<uuid>`, `"none"`, or `"context"`. Sent as a query param (the server
+   * reads it from the query string, not the request body).
+   */
+  spaceReputationId?: string;
+  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  spaceReputationDescendants?: boolean;
 }
 
 export interface UseAskContentReturn {
@@ -94,7 +102,7 @@ export default function useAskContent(): UseAskContentReturn {
   }, []);
 
   const ask = useCallback(
-    ({ query, sourceTypes, spaceId, conversationId, limit }: UseAskContentProps) => {
+    ({ query, sourceTypes, spaceId, conversationId, limit, spaceReputationId, spaceReputationDescendants }: UseAskContentProps) => {
       if (!projectId) return;
       if (!query.trim()) return;
 
@@ -127,9 +135,20 @@ export default function useAskContent(): UseAskContentReturn {
       }
 
       // Run async without blocking the render cycle — errors are surfaced via state
+      // spaceReputation opt-in is read from the query string by the server,
+      // not the request body — append it to the URL.
+      const queryString = (() => {
+        const sp = new URLSearchParams();
+        if (spaceReputationId !== undefined) sp.set("spaceReputationId", spaceReputationId);
+        if (spaceReputationDescendants !== undefined)
+          sp.set("spaceReputationDescendants", String(spaceReputationDescendants));
+        const s = sp.toString();
+        return s ? `?${s}` : "";
+      })();
+
       (async () => {
         try {
-          const response = await fetch(`${getApiBaseUrl()}/${projectId}/search/ask`, {
+          const response = await fetch(`${getApiBaseUrl()}/${projectId}/search/ask${queryString}`, {
             method: "POST",
             headers,
             body,

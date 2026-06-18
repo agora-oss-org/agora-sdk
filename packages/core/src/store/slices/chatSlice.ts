@@ -376,7 +376,7 @@ const chatSlice = createSlice({
 
       const message = bucket.items.find((m) => m.id === messageId);
       if (message) {
-        message.userDeletedAt = new Date();
+        message.userDeletedAt = new Date().toISOString();
         message.content = null;
         message.gif = null;
         message.mentions = [];
