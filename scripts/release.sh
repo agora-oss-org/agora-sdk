@@ -2,8 +2,8 @@
 # Release driver: bump every published @agora-sdk/* package in lockstep, commit the
 # bump, create an annotated tag, and push the branch + tag to both mirrors.
 #
-# Pushing the tag to `github` triggers .github/workflows/publish.yml, which builds
-# and publishes the packages to npm. Versions are kept identical across all packages.
+# Pushing the tag to `upstream` (our GitHub fork) triggers .github/workflows/publish.yml,
+# which builds and publishes the packages to npm. Versions are kept identical across all packages.
 #
 # Usage:  ./scripts/release.sh <major|minor|patch>
 # Wired:  pnpm run major | pnpm run minor | pnpm run patch
@@ -56,8 +56,10 @@ git add \
 git commit -m "🔖 chore(release): $TAG"
 git tag -a "$TAG" -m "Release $TAG"
 
-# Push the branch + tag to every mirror that exists (skip upstream — read-only Replyke).
-for remote in origin github; do
+# Push the branch + tag to every mirror that exists. `upstream` is our GitHub fork
+# (github.com/jenova-marie/agora-sdk) where publish.yml runs — the tag MUST reach it to
+# trigger the npm publish; `origin` is the private git.rso mirror.
+for remote in origin upstream; do
   if git remote get-url "$remote" >/dev/null 2>&1; then
     echo "→ Pushing $BRANCH and $TAG to $remote"
     git push "$remote" "$BRANCH"
