@@ -12,6 +12,8 @@ export interface UseFetchManyCommentsWrapperProps {
   limit?: number;
   include?: CommentIncludeParam;
   defaultSortBy?: CommentsSortByOptions;
+  /** Initial sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
+  defaultSortDir?: "asc" | "desc";
   /**
    * Opt into per-row `spaceReputation` on embedded comment authors. Accepted
    * forms: a space `<uuid>`, `"none"`, or `"context"`.
@@ -27,6 +29,9 @@ export interface UseFetchManyCommentsWrapperValues {
   hasMore: boolean;
   sortBy: CommentsSortByOptions | null;
   setSortBy: (newSortBy: CommentsSortByOptions) => void;
+  /** Sort direction for `sortBy: "createdAt"`. */
+  sortDir: "asc" | "desc";
+  setSortDir: (newSortDir: "asc" | "desc") => void;
   loadMore: () => void;
 }
 
@@ -39,7 +44,8 @@ function useFetchManyCommentsWrapper(
     parentId,
     sourceId,
     limit = 10,
-    defaultSortBy = "new",
+    defaultSortBy = "createdAt",
+    defaultSortDir = "desc",
     include,
     spaceReputationId,
     spaceReputationDescendants,
@@ -53,6 +59,7 @@ function useFetchManyCommentsWrapper(
   const [hasMoreState, setHasMoreState] = useState(true);
 
   const [sortBy, setSortBy] = useState<CommentsSortByOptions>(defaultSortBy);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(defaultSortDir);
   const [page, setPage] = useState(1);
   const [comments, setComments] = useState<Comment[]>([]);
 
@@ -77,6 +84,7 @@ function useFetchManyCommentsWrapper(
         sourceId,
         page: 1,
         sortBy,
+        sortDir,
         limit,
         include,
         spaceReputationId,
@@ -99,6 +107,7 @@ function useFetchManyCommentsWrapper(
     fetchManyComments,
     limit,
     sortBy,
+    sortDir,
     entityId,
     userId,
     parentId,
@@ -132,6 +141,7 @@ function useFetchManyCommentsWrapper(
           sourceId,
           page,
           sortBy,
+          sortDir,
           limit,
           include,
           spaceReputationId,
@@ -164,6 +174,7 @@ function useFetchManyCommentsWrapper(
     parentId,
     sourceId,
     sortBy,
+    sortDir,
     limit,
     include,
     spaceReputationId,
@@ -176,6 +187,8 @@ function useFetchManyCommentsWrapper(
     hasMore: hasMoreState,
     sortBy,
     setSortBy,
+    sortDir,
+    setSortDir,
     loadMore,
   };
 }

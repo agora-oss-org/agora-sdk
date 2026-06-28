@@ -5,6 +5,9 @@ import { ReplykeProvider as OriginalReplykeProvider } from "@agora-sdk/core";
 export * from "@agora-sdk/core";
 import AccountManager from "./AccountManager";
 
+// React Native-specific PushTokenAdapter (@react-native-firebase/messaging)
+export { reactNativePushTokenAdapter } from "./PushTokenAdapter";
+
 // Override ReplykeProvider
 export const ReplykeProvider: React.FC<{
   projectId: string;

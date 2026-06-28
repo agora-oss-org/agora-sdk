@@ -13,6 +13,9 @@ export type {
 export { default as useFetchConversation } from "./useFetchConversation";
 export type { FetchConversationProps } from "./useFetchConversation";
 
+export { default as useFetchConversationPreview } from "./useFetchConversationPreview";
+export type { FetchConversationPreviewProps } from "./useFetchConversationPreview";
+
 export { default as useUpdateConversation } from "./useUpdateConversation";
 export type { UpdateConversationParams } from "./useUpdateConversation";
 

@@ -1,5 +1,8 @@
 import type { ChatMessage } from "../interfaces/models/ChatMessage";
-import type { Conversation } from "../interfaces/models/Conversation";
+import type {
+  Conversation,
+  ConversationPreview,
+} from "../interfaces/models/Conversation";
 import type { ConversationMember } from "../interfaces/models/ConversationMember";
 
 // ─── Server → Client events ────────────────────────────────────────────────
@@ -55,6 +58,10 @@ export interface ServerToClientEvents {
   }) => void;
   "conversation:updated": (patch: Partial<Conversation> & { id: string }) => void;
   "conversation:deleted": (payload: { conversationId: string }) => void;
+  // Fired to a recipient when they're added to a brand-new conversation (DM
+  // target, group initial members, newly added group member). Carries that
+  // recipient's full ConversationPreview so the inbox inserts the row live.
+  "conversation:created": (preview: ConversationPreview) => void;
 }
 
 // ─── Client → Server events ────────────────────────────────────────────────

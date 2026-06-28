@@ -37,7 +37,11 @@ function useFetchManySpaces(): (params?: FetchManySpacesProps) => Promise<Pagina
       if (params?.searchName) queryParams.searchName = params.searchName;
       if (params?.searchDescription) queryParams.searchDescription = params.searchDescription;
       if (params?.searchAny) queryParams.searchAny = params.searchAny;
-      if (params?.memberOf !== undefined) queryParams.memberOf = params.memberOf;
+      // memberOf is an opt-in flag: the server only accepts the literal "true".
+      // Sending "false" (the default) fails validation with a 400. Use a strict
+      // === true check so a stray non-boolean (no runtime type enforcement) can't
+      // be coerced into wrongly opting in.
+      if (params?.memberOf === true) queryParams.memberOf = true;
       if (params?.parentSpaceId !== undefined) queryParams.parentSpaceId = params.parentSpaceId || "null";
       if (params?.include) {
         queryParams.include = Array.isArray(params.include)

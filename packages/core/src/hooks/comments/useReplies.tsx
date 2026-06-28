@@ -9,6 +9,8 @@ import { isUUID } from "../../utils/isUUID";
 export interface UseRepliesProps {
   commentId: string;
   sortBy: CommentsSortByOptions;
+  /** Sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
+  sortDir?: "asc" | "desc";
 }
 
 export interface UseRepliesValues {
@@ -19,7 +21,7 @@ export interface UseRepliesValues {
   setPage: Dispatch<SetStateAction<number>>;
 }
 
-function useReplies({ commentId, sortBy }: UseRepliesProps): UseRepliesValues {
+function useReplies({ commentId, sortBy, sortDir }: UseRepliesProps): UseRepliesValues {
   const fetchManyComments = useFetchManyComments();
   const { addCommentsToTree, entityCommentsTree } = useCommentSection();
 
@@ -63,6 +65,7 @@ function useReplies({ commentId, sortBy }: UseRepliesProps): UseRepliesValues {
           parentId: commentId,
           page,
           sortBy,
+          sortDir,
           limit: 5,
           include: "user", // Always include user for replies display
         });

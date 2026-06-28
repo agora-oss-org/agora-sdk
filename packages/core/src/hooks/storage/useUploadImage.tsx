@@ -111,6 +111,10 @@ function useUploadImage(): UseUploadImageValues {
           formData.append("spaceId", options.spaceId);
         }
 
+        if (options.eventId) {
+          formData.append("eventId", options.eventId);
+        }
+
         // Make request with progress tracking
         const response = await axios.post(
           `/${projectId}/storage/images`,

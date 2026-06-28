@@ -1,0 +1,35 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        # react-js/react-native/expo's tests import @sublay/core for real
+        # (mocked at the module level, but Vite still resolves the package
+        # entry first) — core has no `prepare` script, so its dist won't
+        # exist after a plain install without this.
+        run: pnpm build-all
+
+      - name: Run package test suites
+        run: pnpm test

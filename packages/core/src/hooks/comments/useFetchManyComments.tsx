@@ -10,6 +10,8 @@ export interface FetchManyCommentsProps {
   userId?: string | null | undefined;
   parentId?: string | null | undefined;
   sortBy?: CommentsSortByOptions;
+  /** Sort direction for `sortBy: "createdAt"`. Defaults to "desc". */
+  sortDir?: "asc" | "desc";
   page: number;
   limit?: number;
   include?: CommentIncludeParam;
@@ -34,6 +36,7 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
         userId,
         parentId,
         sortBy,
+        sortDir,
         page,
         limit,
         include,
@@ -60,6 +63,7 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
         limit,
       };
 
+      if (sortDir) params.sortDir = sortDir;
       if (entityId) params.entityId = entityId;
       if (userId) params.userId = userId;
       if (parentId) params.parentId = parentId;

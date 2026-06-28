@@ -13,5 +13,8 @@ export * from "./entityListsApi";
 // Export custom-tables API
 export * from "./tablesApi";
 
+// Export push notifications API
+export * from "./pushApi";
+
 // Future API exports will go here:
 // export * from "./commentsApi";

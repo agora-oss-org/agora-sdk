@@ -8,6 +8,9 @@ export * from "@agora-sdk/core";
 // Web-only OAuth hook (uses window.location for redirect-based flow)
 export { default as useOAuthSignIn, type UseOAuthSignInReturn } from "./hooks/useOAuthSignIn";
 
+// Web Push adapter (browser Notification + Push API, no native dependencies)
+export { webPushTokenAdapter } from "./PushTokenAdapter";
+
 // Override ReplykeProvider to inject AccountManager
 export const ReplykeProvider: React.FC<{
   projectId: string;

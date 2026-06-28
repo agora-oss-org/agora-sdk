@@ -23,16 +23,23 @@ import type { ServerToClientEvents, ClientToServerEvents } from "../types/socket
 import {
   upsertMessage,
   upsertConversationPreview,
+  insertConversationPreview,
+  removeConversationPreview,
   incrementUnread,
   setSocketConnected,
   setTypingUsers,
   updateReactions,
   setConversation,
   setUnreadSummary,
+  selectConversationList,
 } from "../store/slices/chatSlice";
 import useAxiosPrivate from "../config/useAxiosPrivate";
+import useFetchConversationPreview from "../hooks/chat/conversations/useFetchConversationPreview";
 import type { ChatMessage } from "../interfaces/models/ChatMessage";
-import type { Conversation } from "../interfaces/models/Conversation";
+import type {
+  Conversation,
+  ConversationPreview,
+} from "../interfaces/models/Conversation";
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 
@@ -94,6 +101,23 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     conversationsRef.current = allConversations;
   }, [allConversations]);
 
+  // Fresh snapshot of the loaded inbox list — socket handlers consult this to
+  // decide whether a conversation is already represented (loaded) or needs a
+  // fetch-and-insert.
+  const conversationListRef = useRef<ConversationPreview[]>([]);
+  const conversationList = useReplykeSelector(selectConversationList);
+  useEffect(() => {
+    conversationListRef.current = conversationList;
+  }, [conversationList]);
+
+  // Single-preview fetcher, kept in a ref so the socket effect (which binds its
+  // handlers once) always calls the latest closure without re-subscribing.
+  const fetchConversationPreview = useFetchConversationPreview();
+  const fetchPreviewRef = useRef(fetchConversationPreview);
+  useEffect(() => {
+    fetchPreviewRef.current = fetchConversationPreview;
+  }, [fetchConversationPreview]);
+
   // Socket state (tracked in React state so context consumers re-render when it changes)
   const [socketState, setSocketState] = useState<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
   const [connected, setConnected] = useState(false);
@@ -107,6 +131,18 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
 
   // Typing timers per conversation: conversationId → Map<userId, timer>
   const typingTimers = useRef<Map<string, Map<string, ReturnType<typeof setTimeout>>>>(new Map());
+
+  // conversationIds with a single-preview fetch in flight — dedupes bursts of
+  // events for the same not-loaded conversation into a single network call.
+  const inFlightPreviews = useRef<Set<string>>(new Set());
+
+  // Debounce timer for the authoritative unread-summary refetch (the only
+  // correct source of truth for not-loaded global counters).
+  const unreadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Tracks whether the socket has connected at least once, so the unread
+  // summary is refetched only on *re*connect (mount already fetches it).
+  const hasConnectedRef = useRef(false);
 
   const registerActiveConversation = useCallback((id: string) => {
     activeConversationIds.current.add(id);
@@ -156,30 +192,90 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     [dispatch]
   );
 
-  // ── Unread summary fetch ─────────────────────────────────────────────────────
+  // ── Authoritative unread-summary refetch ─────────────────────────────────────
+  // Fetches the server's total unread counts and writes them into the store.
+  // This is the single source of truth for global counters whenever an event
+  // touches a conversation not represented in the loaded list (insert/remove of
+  // a not-loaded conversation) — client-side arithmetic there is the
+  // double-count trap the live-list plan forbids.
+  const refetchUnreadSummary = useCallback(async (): Promise<void> => {
+    if (!projectId || !accessToken) return;
+    try {
+      const { data } = await axiosPrivate.get<{
+        totalUnread: number;
+        unreadConversationCount: number;
+      }>(`/${projectId}/chat/conversations/unread-count`);
+      dispatch(
+        setUnreadSummary({
+          totalUnread: data.totalUnread,
+          unreadConversationCount: data.unreadConversationCount,
+        })
+      );
+    } catch {
+      // Non-critical — badge will update via socket events as messages arrive
+    }
+  }, [projectId, accessToken, axiosPrivate, dispatch]);
+
+  // Keep the latest refetch closure in a ref so the debounce/socket handlers
+  // (bound once) always call the current one.
+  const refetchUnreadSummaryRef = useRef(refetchUnreadSummary);
+  useEffect(() => {
+    refetchUnreadSummaryRef.current = refetchUnreadSummary;
+  }, [refetchUnreadSummary]);
+
+  // Debounced trigger — collapses a burst of events across many not-loaded
+  // conversations into a single authoritative summary refetch.
+  const scheduleUnreadSummaryRefetch = useCallback(() => {
+    if (unreadDebounceRef.current) clearTimeout(unreadDebounceRef.current);
+    unreadDebounceRef.current = setTimeout(() => {
+      unreadDebounceRef.current = null;
+      void refetchUnreadSummaryRef.current();
+    }, 800);
+  }, []);
+
+  // Fetch a single preview for a not-loaded conversation and insert it into the
+  // inbox. Deduped by in-flight set; no-ops if the conversation is (now) loaded.
+  // Errors are swallowed — the reconnect refresh / next event self-heals.
+  const fetchAndInsertPreview = useCallback(
+    async (conversationId: string): Promise<void> => {
+      if (inFlightPreviews.current.has(conversationId)) return;
+      if (conversationListRef.current.some((c) => c.id === conversationId)) {
+        return;
+      }
+      inFlightPreviews.current.add(conversationId);
+      try {
+        const preview = await fetchPreviewRef.current({ conversationId });
+        dispatch(insertConversationPreview(preview));
+      } catch {
+        // ignore — self-heals via reconnect refresh or a later event
+      } finally {
+        inFlightPreviews.current.delete(conversationId);
+      }
+    },
+    [dispatch]
+  );
+
+  // Remove a conversation from the inbox and reconcile the globals. If the row
+  // was loaded, removeConversationPreview adjusts the counters exactly from its
+  // known unreadCount; if it was NOT loaded we can't know its unread, so defer
+  // to the debounced authoritative refetch instead of guessing.
+  const removeAndReconcile = useCallback(
+    (conversationId: string): void => {
+      const wasLoaded = conversationListRef.current.some(
+        (c) => c.id === conversationId
+      );
+      dispatch(removeConversationPreview(conversationId));
+      if (!wasLoaded) scheduleUnreadSummaryRefetch();
+    },
+    [dispatch, scheduleUnreadSummaryRefetch]
+  );
+
+  // ── Unread summary fetch on mount / auth change ──────────────────────────────
   // Fetch total unread counts once auth is ready so global badges (e.g. sidebar)
   // are accurate before the user ever loads the conversation list.
   useEffect(() => {
-    if (!projectId || !accessToken) return;
-
-    axiosPrivate
-      .get<{ totalUnread: number; unreadConversationCount: number }>(
-        `/${projectId}/chat/conversations/unread-count`
-      )
-      .then(({ data }) => {
-        dispatch(
-          setUnreadSummary({
-            totalUnread: data.totalUnread,
-            unreadConversationCount: data.unreadConversationCount,
-          })
-        );
-      })
-      .catch(() => {
-        // Non-critical — badge will update via socket events as messages arrive
-      });
-    // Re-fetch when auth changes (e.g. user switches accounts)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, accessToken]);
+    void refetchUnreadSummary();
+  }, [refetchUnreadSummary]);
 
   // ── Main socket creation effect ─────────────────────────────────────────────
   const hasToken = Boolean(accessToken);
@@ -202,6 +298,14 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     socket.on("connect", () => {
       setConnected(true);
       dispatch(setSocketConnected(true));
+      // Reconnect reconciliation: on every connect *after* the first, the
+      // socket has re-registered its rooms server-side; refetch the
+      // authoritative unread summary to correct anything missed while down.
+      // (useConversations refreshes the list itself on the same transition.)
+      if (hasConnectedRef.current) {
+        void refetchUnreadSummaryRef.current();
+      }
+      hasConnectedRef.current = true;
     });
 
     socket.on("disconnect", () => {
@@ -212,17 +316,32 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     // ── message:created ─────────────────────────────────────────────────────
     socket.on("message:created", (message) => {
       dispatch(upsertMessage(message));
-      dispatch(
-        upsertConversationPreview({
-          conversationId: message.conversationId,
-          patch: {
-            lastMessageAt: message.createdAt,
-            lastMessage: message,
-          },
-        })
+
+      const isLoaded = conversationListRef.current.some(
+        (c) => c.id === message.conversationId
       );
-      if (!activeConversationIds.current.has(message.conversationId)) {
-        dispatch(incrementUnread(message.conversationId));
+
+      if (isLoaded) {
+        // Already in the inbox — bump + reorder and increment unread as before.
+        dispatch(
+          upsertConversationPreview({
+            conversationId: message.conversationId,
+            patch: {
+              lastMessageAt: message.createdAt,
+              lastMessage: message,
+            },
+          })
+        );
+        if (!activeConversationIds.current.has(message.conversationId)) {
+          dispatch(incrementUnread(message.conversationId));
+        }
+      } else {
+        // Not loaded (paginated out, or brand new with a first message):
+        // fetch-and-insert the preview so it bumps to the top, and let the
+        // debounced authoritative refetch own the global counters — never
+        // guess them from client arithmetic for not-loaded conversations.
+        void fetchAndInsertPreview(message.conversationId);
+        scheduleUnreadSummaryRefetch();
       }
     });
 
@@ -347,6 +466,36 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       }
     });
 
+    // ── conversation:created ────────────────────────────────────────────────
+    // The user was added to a brand-new conversation. The server sends a full
+    // preview; insert it directly. Defensively fall back to a fetch if a future
+    // emitter ever sends only an id.
+    socket.on("conversation:created", (preview) => {
+      if (preview && typeof preview === "object" && "unreadCount" in preview) {
+        dispatch(insertConversationPreview(preview));
+      } else {
+        const id = (preview as { id?: string } | null)?.id;
+        if (id) void fetchAndInsertPreview(id);
+      }
+    });
+
+    // ── member:left (self) ──────────────────────────────────────────────────
+    // When the current user leaves / is removed from a conversation, drop it
+    // from the inbox. (ConversationProvider separately handles the open-chat
+    // case for the conversation it's scoped to.)
+    socket.on("member:left", ({ userId, conversationId }) => {
+      if (userId === currentUserIdRef.current) {
+        removeAndReconcile(conversationId);
+      }
+    });
+
+    // ── conversation:deleted (inbox-level) ──────────────────────────────────
+    // Remove the row from the inbox even when the user doesn't have it open.
+    // ConversationProvider keeps its own handler for the open-chat teardown.
+    socket.on("conversation:deleted", ({ conversationId }) => {
+      removeAndReconcile(conversationId);
+    });
+
     // ── Cleanup ─────────────────────────────────────────────────────────────
     return () => {
       socket.removeAllListeners();
@@ -363,6 +512,13 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         });
       });
       typingTimers.current.clear();
+
+      // Clear the pending unread-summary debounce and reset reconnect tracking
+      if (unreadDebounceRef.current) {
+        clearTimeout(unreadDebounceRef.current);
+        unreadDebounceRef.current = null;
+      }
+      hasConnectedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, hasToken]);

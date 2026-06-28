@@ -1,0 +1,81 @@
+import { describe, it, expect, afterEach } from "vitest";
+import { act } from "@testing-library/react";
+
+import { renderHookWithAxios, resetAxiosMocks, makeEvent } from "../../test-utils";
+import useUpdateEvent from "./useUpdateEvent";
+
+afterEach(() => {
+  resetAxiosMocks();
+});
+
+describe("useUpdateEvent", () => {
+  it("updates an event via a plain JSON request when there is no cover/gallery", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useUpdateEvent());
+
+    const updated = makeEvent({ title: "New title" });
+    axiosPrivate.mockResponse("patch", updated);
+
+    let returned: typeof updated | undefined;
+    await act(async () => {
+      returned = await result.current({
+        eventId: "event-1",
+        update: { title: "New title" },
+      });
+    });
+
+    expect(returned).toEqual(updated);
+
+    const [call] = axiosPrivate.calls("patch");
+    expect(call.url).toBe("/test-project/events/event-1");
+    expect(call.body).toEqual({ title: "New title" });
+    expect(call.body instanceof FormData).toBe(false);
+  });
+
+  it("updates an event via multipart FormData when a gallery is provided", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useUpdateEvent());
+
+    const updated = makeEvent({ title: "With gallery" });
+    axiosPrivate.mockResponse("patch", updated);
+
+    const file = new File(["binary"], "photo.png", { type: "image/png" });
+
+    await act(async () => {
+      await result.current({
+        eventId: "event-1",
+        update: { title: "With gallery", removeImageIds: ["file-1"] },
+        gallery: { files: [file], options: { mode: "original-aspect", sizes: { full: 1200 } } },
+      });
+    });
+
+    const [call] = axiosPrivate.calls("patch");
+    expect(call.body instanceof FormData).toBe(true);
+    const formData = call.body as FormData;
+    expect(formData.get("title")).toBe("With gallery");
+    expect(formData.get("removeImageIds")).toBe(JSON.stringify(["file-1"]));
+    expect(formData.get("gallery")).toBeInstanceOf(File);
+    expect(call.config?.headers).toMatchObject({
+      "Content-Type": "multipart/form-data",
+    });
+  });
+
+  it("rejects when the server returns an error response", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useUpdateEvent());
+
+    axiosPrivate.mockError("patch", 500, { message: "Internal error" });
+
+    await expect(
+      result.current({ eventId: "event-1", update: { title: "New title" } }),
+    ).rejects.toMatchObject({ response: { status: 500 } });
+  });
+
+  it("throws before making a request when there is no project", async () => {
+    const { result, axiosPrivate } = renderHookWithAxios(() => useUpdateEvent(), {
+      projectId: "",
+    });
+
+    await expect(
+      result.current({ eventId: "event-1", update: { title: "New title" } }),
+    ).rejects.toThrow("No projectId available.");
+    expect(axiosPrivate.calls("patch")).toHaveLength(0);
+  });
+});

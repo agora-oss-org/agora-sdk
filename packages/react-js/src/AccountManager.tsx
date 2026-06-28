@@ -3,7 +3,7 @@ import type { AccountStorage, AccountMap } from "@agora-sdk/core";
 
 const STORAGE_KEY_PREFIX = "replyke-accounts:";
 
-const webAccountStorage: AccountStorage = {
+export const webAccountStorage: AccountStorage = {
   async getAccountMap(projectId: string): Promise<AccountMap | null> {
     try {
       const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${projectId}`);

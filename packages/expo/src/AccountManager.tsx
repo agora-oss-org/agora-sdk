@@ -6,7 +6,7 @@ import type { AccountStorage, AccountMap } from "@agora-sdk/core";
 // /^[A-Za-z0-9._-]+$/. Use `_` as the separator instead.
 const STORAGE_KEY_PREFIX = "replyke-accounts_";
 
-const secureStoreStorage: AccountStorage = {
+export const secureStoreStorage: AccountStorage = {
   async getAccountMap(projectId: string): Promise<AccountMap | null> {
     try {
       const raw = await SecureStore.getItemAsync(

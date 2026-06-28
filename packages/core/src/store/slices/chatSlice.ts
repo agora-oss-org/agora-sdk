@@ -205,6 +205,85 @@ const chatSlice = createSlice({
       }
     },
 
+    /**
+     * Insert a full ConversationPreview into the inbox list. If a preview with
+     * the same id already exists, patch it in place (idempotent — no duplicate,
+     * no positional change unless lastMessageAt changed). On a fresh insert the
+     * list is re-sorted by lastMessageAt DESC NULLS LAST.
+     *
+     * Deliberately does NOT touch totalUnreadCount / unreadConversationCount:
+     * those globals are owned by setUnreadSummary / increment / clearUnread, and
+     * folding an inserted preview's unreadCount into them is the double-count
+     * trap the live-list plan calls out.
+     */
+    insertConversationPreview(
+      state,
+      action: PayloadAction<ConversationPreview>
+    ) {
+      const preview = action.payload;
+      const existingIndex = state.conversationList.items.findIndex(
+        (c) => c.id === preview.id
+      );
+
+      if (existingIndex !== -1) {
+        // Patch in place — idempotent on repeat
+        Object.assign(state.conversationList.items[existingIndex], preview);
+      } else {
+        state.conversationList.items.push(preview);
+      }
+      sortPreviews(state.conversationList.items);
+
+      // Mirror into the individual conversation entry like the existing upsert
+      if (!state.conversations[preview.id]) {
+        state.conversations[preview.id] = {
+          data: null,
+          loading: false,
+          error: null,
+        };
+      }
+      state.conversations[preview.id].data = preview;
+    },
+
+    /**
+     * Remove a conversation preview from the inbox list.
+     *
+     * If the removed row was loaded (present in the list) and carried unread
+     * messages, adjust the globals exactly as clearUnread would: decrement
+     * totalUnreadCount by its unreadCount and unreadConversationCount by 1
+     * (clamped at 0). If the conversation was NOT loaded we cannot know its
+     * unread count, so we leave the globals to the debounced summary refetch —
+     * guessing here is the double-count trap.
+     */
+    removeConversationPreview(state, action: PayloadAction<string>) {
+      const conversationId = action.payload;
+      const index = state.conversationList.items.findIndex(
+        (c) => c.id === conversationId
+      );
+
+      if (index !== -1) {
+        const prevCount = state.conversationList.items[index].unreadCount ?? 0;
+        state.conversationList.items.splice(index, 1);
+        if (prevCount > 0) {
+          if (state.totalUnreadCount !== null) {
+            state.totalUnreadCount = Math.max(
+              0,
+              state.totalUnreadCount - prevCount
+            );
+          }
+          if (state.unreadConversationCount !== null) {
+            state.unreadConversationCount = Math.max(
+              0,
+              state.unreadConversationCount - 1
+            );
+          }
+        }
+      }
+
+      // Drop any cached detail / message buckets for the removed conversation
+      delete state.conversations[conversationId];
+      delete state.messages[conversationId];
+    },
+
     incrementUnread(state, action: PayloadAction<string>) {
       const conversationId = action.payload;
       const preview = state.conversationList.items.find(
@@ -497,6 +576,8 @@ export const {
   setConversationListHasMore,
   setConversationListCursor,
   upsertConversationPreview,
+  insertConversationPreview,
+  removeConversationPreview,
   incrementUnread,
   clearUnread,
   setUnreadSummary,

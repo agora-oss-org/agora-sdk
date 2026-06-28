@@ -6,5 +6,5 @@
     "moduleResolution": "node",
     "ignoreDeprecations": "5.0"
   },
-  "exclude": ["recycle_bin", "**/*.test.ts", "**/*.test.tsx"]
+  "exclude": ["recycle_bin", "**/*.test.ts", "**/*.test.tsx", "src/test-utils/**"]
 }

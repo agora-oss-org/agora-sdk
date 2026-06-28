@@ -12,6 +12,8 @@ export interface UseEntityCommentsProps {
   entityId: string | undefined | null;
   limit?: number;
   defaultSortBy?: CommentsSortByOptions;
+  /** Initial sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
+  defaultSortDir?: "asc" | "desc";
   include?: CommentIncludeParam;
   /**
    * Opt into per-row `spaceReputation` on embedded comment authors. Accepted
@@ -30,6 +32,9 @@ export interface UseEntityCommentsValues {
   hasMore: boolean;
   sortBy: CommentsSortByOptions | null;
   setSortBy: (newSortBy: CommentsSortByOptions) => void;
+  /** Sort direction for `sortBy: "createdAt"`. */
+  sortDir: "asc" | "desc";
+  setSortDir: (newSortDir: "asc" | "desc") => void;
   loadMore: () => void;
   addCommentsToTree: (
     newComments: Comment[] | undefined,
@@ -45,7 +50,8 @@ function useEntityComments(
   const {
     entityId,
     limit = 10,
-    defaultSortBy = "new",
+    defaultSortBy = "createdAt",
+    defaultSortDir = "desc",
     include,
     spaceReputationId,
     spaceReputationDescendants,
@@ -60,6 +66,7 @@ function useEntityComments(
   const [hasMoreState, setHasMoreState] = useState(true); // required to trigger rerenders
 
   const [sortBy, setSortBy] = useState<CommentsSortByOptions>(defaultSortBy);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(defaultSortDir);
   const [page, setPage] = useState(1);
 
   const [entityCommentsTree, setEntityCommentsTree] =
@@ -129,6 +136,7 @@ function useEntityComments(
         entityId,
         page: 1,
         sortBy,
+        sortDir,
         limit,
         include,
         spaceReputationId,
@@ -147,7 +155,7 @@ function useEntityComments(
       loading.current = false;
       setLoadingState(false);
     }
-  }, [fetchManyComments, limit, sortBy, entityId, include, spaceReputationId, spaceReputationDescendants]);
+  }, [fetchManyComments, limit, sortBy, sortDir, entityId, include, spaceReputationId, spaceReputationDescendants]);
 
   const loadMore = () => {
     if (loading.current || !hasMore.current) return;
@@ -175,6 +183,7 @@ function useEntityComments(
           entityId,
           page,
           sortBy,
+          sortDir,
           limit,
           spaceReputationId,
           spaceReputationDescendants,
@@ -208,6 +217,8 @@ function useEntityComments(
     hasMore: hasMoreState,
     sortBy,
     setSortBy,
+    sortDir,
+    setSortDir,
     loadMore,
     addCommentsToTree,
     removeCommentFromTree,

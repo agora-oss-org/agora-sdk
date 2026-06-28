@@ -1,6 +1,6 @@
 {
   "name": "@agora-sdk/monorepo",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "license": "Apache-2.0",
   "author": "Agora SDK, maintained by Jenova Marie",
   "description": "Agora: Build interactive apps with social features like comments, votes, feeds, user lists, notifications, and more.",
@@ -30,6 +30,7 @@
   "private": false,
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "test": "pnpm -r --if-present run test",
     "major": "bash scripts/release.sh major",
     "minor": "bash scripts/release.sh minor",
     "patch": "bash scripts/release.sh patch",

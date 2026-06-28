@@ -186,7 +186,11 @@ export const spacesApi = baseApi.injectEndpoints({
         if (params.searchDescription) queryParams.append("searchDescription", params.searchDescription);
         if (params.searchAny) queryParams.append("searchAny", params.searchAny);
         if (params.readingPermission) queryParams.append("readingPermission", params.readingPermission);
-        if (params.memberOf !== undefined) queryParams.append("memberOf", params.memberOf.toString());
+        // memberOf is an opt-in flag: the server only accepts the literal "true".
+        // Sending "false" (the default) fails validation with a 400. Use a strict
+        // === true check so a stray non-boolean (no runtime type enforcement) can't
+        // be coerced into wrongly opting in.
+        if (params.memberOf === true) queryParams.append("memberOf", "true");
         if (params.parentSpaceId !== undefined) {
           // Convert null to "null" string for API
           queryParams.append("parentSpaceId", params.parentSpaceId === null ? "null" : params.parentSpaceId);
@@ -448,7 +452,9 @@ export const spacesApi = baseApi.injectEndpoints({
         if (params.limit !== undefined) queryParams.append("limit", params.limit.toString());
         if (params.status) queryParams.append("status", params.status);
         if (params.role) queryParams.append("role", params.role);
-        if (params.all) queryParams.append("all", "true");
+        // `all` bypasses pagination; strict === true so a stray non-boolean
+        // (no runtime type enforcement) can't wrongly opt in.
+        if (params.all === true) queryParams.append("all", "true");
 
         const queryString = queryParams.toString();
         return {

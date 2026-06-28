@@ -1,0 +1,206 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { act, cleanup, waitFor } from "@testing-library/react";
+
+import {
+  renderHookWithStore,
+  stubFetchMock,
+  unstubFetchMock,
+  jsonResponse,
+  type FetchMockHandle,
+} from "../../test-utils";
+import useSpaceList from "./useSpaceList";
+
+let fetchHandle: FetchMockHandle;
+
+const DEBOUNCE_MS = 800;
+
+function paginated(data: { id: string }[], hasMore: boolean) {
+  return jsonResponse({
+    data,
+    pagination: { page: 1, pageSize: 20, totalPages: hasMore ? 2 : 1, totalItems: data.length, hasMore },
+  });
+}
+
+beforeEach(() => {
+  fetchHandle = stubFetchMock(async () => jsonResponse({}, 404));
+});
+
+afterEach(() => {
+  cleanup();
+  unstubFetchMock();
+});
+
+describe("useSpaceList", () => {
+  it("fetches immediately when called with no filters", async () => {
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], true));
+    const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+      projectId: "test-project",
+    });
+
+    act(() => result.current.fetchSpaces({}));
+
+    await waitFor(() => expect(result.current.spaces.map((s) => s.id)).toEqual(["s1"]));
+    expect(result.current.hasMore).toBe(true);
+    expect(result.current.sortBy).toBe("newest"); // default
+  });
+
+  // Real timers only — see [[sdk-testing-fake-timers-corrupt-scheduler]] memory:
+  // vi.useFakeTimers() has been observed to corrupt React's scheduler across later
+  // tests in the same file when combined with @testing-library/react hook renders.
+  it("debounces a fetch triggered by a filter change", async () => {
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], false));
+    const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+      projectId: "test-project",
+    });
+
+    act(() => result.current.fetchSpaces({ searchName: "foo" }));
+    expect(fetchHandle.calls()).toHaveLength(0); // not yet — debounced
+
+    await waitFor(() => expect(fetchHandle.calls()).toHaveLength(1), {
+      timeout: DEBOUNCE_MS + 500,
+    });
+    expect(result.current.searchName).toBe("foo");
+  }, 10_000);
+
+  it("fetchImmediately bypasses the debounce even with filters set", async () => {
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], false));
+    const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+      projectId: "test-project",
+    });
+
+    await act(async () => {
+      result.current.fetchSpaces({ searchName: "foo" }, undefined, { fetchImmediately: true });
+      await Promise.resolve();
+    });
+
+    expect(fetchHandle.calls()).toHaveLength(1);
+  });
+
+  it("clearImmediately empties spaces synchronously before the (debounced) fetch resolves", async () => {
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], false));
+    const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+      projectId: "test-project",
+    });
+    act(() => result.current.fetchSpaces({}, undefined, { fetchImmediately: true }));
+    await waitFor(() => expect(result.current.spaces).toHaveLength(1));
+
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s2" }], false));
+    act(() =>
+      result.current.fetchSpaces({ searchName: "bar" }, undefined, { clearImmediately: true }),
+    );
+    expect(result.current.spaces).toEqual([]); // cleared synchronously, before the debounce fires
+
+    await waitFor(() => expect(fetchHandle.calls()).toHaveLength(2), {
+      timeout: DEBOUNCE_MS + 500,
+    });
+  }, 10_000);
+
+  it("resetUnspecified resets filters when fetching immediately", async () => {
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([], false));
+    const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+      projectId: "test-project",
+    });
+    act(() =>
+      result.current.fetchSpaces({ searchName: "foo" }, undefined, { fetchImmediately: true }),
+    );
+    await waitFor(() => expect(result.current.searchName).toBe("foo"));
+
+    fetchHandle.fetchMock.mockResolvedValueOnce(paginated([], false));
+    act(() =>
+      result.current.fetchSpaces({}, undefined, {
+        fetchImmediately: true,
+        resetUnspecified: true,
+      }),
+    );
+    await waitFor(() => expect(result.current.searchName).toBeNull());
+  });
+
+  describe("loadMore", () => {
+    it("is a no-op before fetchSpaces has been called (no config yet)", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+        projectId: "test-project",
+      });
+
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      expect(fetchHandle.calls()).toHaveLength(0);
+      consoleSpy.mockRestore();
+    });
+
+    it("fetches the next page and appends, once initialized", async () => {
+      fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], true));
+      const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+        projectId: "test-project",
+      });
+      act(() => result.current.fetchSpaces({}));
+      await waitFor(() => expect(result.current.spaces).toHaveLength(1));
+
+      fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s2" }], false));
+      await act(async () => {
+        await result.current.loadMore();
+      });
+
+      expect(result.current.spaces.map((s) => s.id)).toEqual(["s1", "s2"]);
+      expect(result.current.hasMore).toBe(false);
+
+      const pageCall = fetchHandle
+        .calls()
+        .find((c) => new URL(c.url).searchParams.get("page") === "2");
+      expect(pageCall).toBeTruthy();
+    });
+
+    it("is a no-op once hasMore is false", async () => {
+      fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], false));
+      const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+        projectId: "test-project",
+      });
+      act(() => result.current.fetchSpaces({}));
+      await waitFor(() => expect(result.current.spaces).toHaveLength(1));
+      expect(result.current.hasMore).toBe(false);
+
+      await act(async () => {
+        await result.current.loadMore();
+      });
+      expect(fetchHandle.calls()).toHaveLength(1); // unchanged
+    });
+  });
+
+  describe("createSpace / deleteSpace", () => {
+    it("createSpace adds the new space to the list", async () => {
+      fetchHandle.fetchMock.mockResolvedValueOnce(paginated([], false));
+      const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+        projectId: "test-project",
+      });
+      act(() => result.current.fetchSpaces({}, undefined, { fetchImmediately: true }));
+      await waitFor(() => expect(result.current.hasMore).toBe(false));
+
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({ id: "s1" }, 201));
+      let created: { id: string } | undefined;
+      await act(async () => {
+        created = await result.current.createSpace({ name: "Hello" });
+      });
+
+      expect(created?.id).toBe("s1");
+      expect(result.current.spaces.map((s) => s.id)).toEqual(["s1"]);
+    });
+
+    it("deleteSpace removes the space from the list", async () => {
+      fetchHandle.fetchMock.mockResolvedValueOnce(paginated([{ id: "s1" }], false));
+      const { result } = renderHookWithStore(() => useSpaceList({ listId: "feed" }), {
+        projectId: "test-project",
+      });
+      act(() => result.current.fetchSpaces({}));
+      await waitFor(() => expect(result.current.spaces).toHaveLength(1));
+
+      fetchHandle.fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }));
+      await act(async () => {
+        await result.current.deleteSpace({ spaceId: "s1" });
+      });
+
+      expect(result.current.spaces).toEqual([]);
+    });
+  });
+});

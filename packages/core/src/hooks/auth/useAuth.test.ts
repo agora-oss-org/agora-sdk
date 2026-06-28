@@ -1,0 +1,86 @@
+import { describe, it, expect, afterEach } from "vitest";
+import { act, waitFor } from "@testing-library/react";
+
+import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
+import useAuth from "./useAuth";
+import type { AuthUser } from "../../interfaces/models/User";
+
+afterEach(() => {
+  resetAxiosMocks();
+});
+
+describe("useAuth", () => {
+  it("exposes the current token state from the store", () => {
+    const { result } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
+
+    expect(result.current.accessToken).toBe("access-1");
+    expect(result.current.refreshToken).toBe("refresh-1");
+    expect(result.current.initialized).toBe(true);
+  });
+
+  it("signInWithEmailAndPassword updates the token state on success", async () => {
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+    });
+    const user = { id: "user-1" } as AuthUser;
+    axiosPublic.mockResponse("post", { accessToken: "access-1", refreshToken: "refresh-1", user });
+
+    await act(async () => {
+      await result.current.signInWithEmailAndPassword({ email: "a@b.com", password: "secret" });
+    });
+
+    expect(result.current.accessToken).toBe("access-1");
+    expect(axiosPublic.calls("post")[0].url).toBe("/project-1/auth/sign-in");
+  });
+
+  it("signInWithEmailAndPassword throws on a failed request", async () => {
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+    });
+    axiosPublic.mockError("post", 401, { message: "Invalid credentials" });
+
+    await expect(
+      act(async () => {
+        await result.current.signInWithEmailAndPassword({ email: "a@b.com", password: "wrong" });
+      }),
+    ).rejects.toThrow();
+  });
+
+  it("signOut clears the token state", async () => {
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+    });
+    axiosPublic.mockResponse("post", {});
+
+    await act(async () => {
+      await result.current.signOut();
+    });
+
+    await waitFor(() => expect(result.current.accessToken).toBeNull());
+    expect(result.current.refreshToken).toBeNull();
+  });
+
+  it("requestNewAccessToken returns the rotated access token", async () => {
+    const { result, axiosPublic } = renderHookWithAxios(() => useAuth(), {
+      projectId: "project-1",
+      accessToken: "stale",
+      refreshToken: "refresh-1",
+    });
+    const user = { id: "user-1" } as AuthUser;
+    axiosPublic.mockResponse("post", { accessToken: "fresh", refreshToken: "refresh-2", user });
+
+    let returned: string | undefined;
+    await act(async () => {
+      returned = await result.current.requestNewAccessToken();
+    });
+
+    expect(returned).toBe("fresh");
+    expect(result.current.accessToken).toBe("fresh");
+  });
+});

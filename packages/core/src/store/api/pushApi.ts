@@ -1,0 +1,28 @@
+import { baseApi } from "./baseApi";
+import type { PushDeviceIdentifier } from "../../interfaces/PushTokenAdapter";
+
+type PushDeviceMutationParams = PushDeviceIdentifier & { projectId: string };
+
+export const pushApi = baseApi.injectEndpoints({
+  endpoints: (builder) => ({
+    registerPushDevice: builder.mutation<void, PushDeviceMutationParams>({
+      query: ({ projectId, ...body }) => ({
+        url: `/${projectId}/push-notifications/devices`,
+        method: "POST",
+        body,
+      }),
+    }),
+
+    deregisterPushDevice: builder.mutation<void, PushDeviceMutationParams>({
+      query: ({ projectId, ...body }) => ({
+        url: `/${projectId}/push-notifications/devices`,
+        method: "DELETE",
+        body,
+      }),
+    }),
+  }),
+});
+
+export const { useRegisterPushDeviceMutation, useDeregisterPushDeviceMutation } = pushApi;
+
+export const { registerPushDevice, deregisterPushDevice } = pushApi.endpoints;

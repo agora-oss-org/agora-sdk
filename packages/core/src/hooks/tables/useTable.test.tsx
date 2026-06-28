@@ -1,72 +1,24 @@
-import React from "react";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
-import { Provider } from "react-redux";
-import { configureStore } from "@reduxjs/toolkit";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { waitFor, act, cleanup } from "@testing-library/react";
 
-import { replykeReducers } from "../../store/replykeReducers";
-import { baseApi } from "../../store/api/baseApi";
-import { ReplykeContext } from "../../context/replyke-context";
+import {
+  renderHookWithStore,
+  stubFetchMock,
+  unstubFetchMock,
+  jsonResponse,
+  type FetchMockHandle,
+} from "../../test-utils";
 import { useTable } from "./useTable";
-
-function makeStore() {
-  return configureStore({
-    reducer: {
-      replyke: replykeReducers,
-      [baseApi.reducerPath]: baseApi.reducer,
-    },
-    middleware: (gdm) =>
-      gdm({ serializableCheck: false, immutableCheck: false }).concat(
-        baseApi.middleware,
-      ),
-  });
-}
 
 const ROWS = [
   { id: "1", name: "alpha" },
   { id: "2", name: "bravo" },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let fetchMock: any;
-
-function jsonResponse(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
-
-// jsdom swaps in its own AbortController whose AbortSignal node's undici
-// `Request` rejects. RTK Query's fetchBaseQuery builds `new Request(url, {
-// signal })` before calling fetch, so the query throws at construction. Shim
-// Request to a lenient passthrough that just carries url/method (the signal is
-// irrelevant to these tests).
-class TestRequest {
-  url: string;
-  method: string;
-  headers: unknown;
-  private init: Record<string, unknown>;
-  constructor(input: unknown, init: Record<string, unknown> = {}) {
-    const base = (typeof input === "string" ? { url: input } : input) as {
-      url: string;
-      method?: string;
-      headers?: unknown;
-      init?: Record<string, unknown>;
-    };
-    this.url = base.url;
-    this.init = { ...(base.init ?? {}), ...init };
-    this.method = (this.init.method as string) ?? base.method ?? "GET";
-    this.headers = this.init.headers ?? base.headers;
-  }
-  clone() {
-    return new TestRequest(this);
-  }
-}
+let fetchHandle: FetchMockHandle;
 
 beforeEach(() => {
-  vi.stubGlobal("Request", TestRequest);
-  fetchMock = vi.fn(async (...args: unknown[]) => {
+  fetchHandle = stubFetchMock(async (...args: unknown[]) => {
     const req = args[0] as Request | string;
     const url = typeof req === "string" ? req : req.url;
     const method =
@@ -86,38 +38,30 @@ beforeEach(() => {
         },
       });
     }
+    if (method === "POST" && url.includes("/restore")) {
+      return jsonResponse({ row: { id: "1", name: "alpha", deletedAt: null } });
+    }
     if (method === "POST" && url.includes("/db/Events")) {
       return jsonResponse({ row: { id: "3", name: "charlie" } }, 201);
     }
+    if (method === "PATCH" && url.includes("/db/Events/1")) {
+      return jsonResponse({ row: { id: "1", name: "updated" } });
+    }
+    if (method === "DELETE" && url.includes("/db/Events/1")) {
+      return jsonResponse({ deleted: true, soft: !url.includes("force=true") });
+    }
     return jsonResponse({}, 404);
   });
-  vi.stubGlobal("fetch", fetchMock);
 });
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  cleanup();
+  unstubFetchMock();
 });
-
-// One stable store per renderHook call — recreating it on every re-render would
-// wipe RTK Query's cache.
-function makeWrapper() {
-  const store = makeStore();
-  return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <Provider store={store}>
-        <ReplykeContext.Provider
-          value={{ projectId: "test-project", project: null } as never}
-        >
-          {children}
-        </ReplykeContext.Provider>
-      </Provider>
-    );
-  };
-}
 
 describe("useTable", () => {
   it("loads rows from the /db surface", async () => {
-    const { result } = renderHook(() => useTable("Events"), { wrapper: makeWrapper() });
+    const { result } = renderHookWithStore(() => useTable("Events"));
 
     expect(result.current.loading).toBe(true);
 
@@ -127,16 +71,14 @@ describe("useTable", () => {
     expect(result.current.pagination?.totalItems).toBe(2);
 
     // The GET hit the logical-name /db route.
-    const getCall = fetchMock.mock.calls.find((c: unknown[]) => {
-      const req = c[0] as Request | string;
-      const url = typeof req === "string" ? req : req.url;
-      return url.includes("/test-project/db/Events");
-    });
+    const getCall = fetchHandle
+      .calls()
+      .find((c) => c.url.includes("/test-project/db/Events"));
     expect(getCall).toBeTruthy();
   });
 
   it("createRow issues a POST and returns the new row", async () => {
-    const { result } = renderHook(() => useTable("Events"), { wrapper: makeWrapper() });
+    const { result } = renderHookWithStore(() => useTable("Events"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     let created: { id: string } | undefined;
@@ -145,19 +87,12 @@ describe("useTable", () => {
     });
     expect(created?.id).toBe("3");
 
-    const postCall = fetchMock.mock.calls.find((c: unknown[]) => {
-      const req = c[0] as Request | string;
-      const method =
-        typeof req === "string"
-          ? (c[1] as RequestInit | undefined)?.method
-          : (req as Request).method;
-      return method === "POST";
-    });
+    const postCall = fetchHandle.calls().find((c) => c.method === "POST");
     expect(postCall).toBeTruthy();
   });
 
   it("exposes view controls that update the slice", async () => {
-    const { result } = renderHook(() => useTable("Events"), { wrapper: makeWrapper() });
+    const { result } = renderHookWithStore(() => useTable("Events"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     act(() => result.current.setIncludeDeleted(true));
@@ -165,5 +100,114 @@ describe("useTable", () => {
       expect(result.current.view.includeDeleted).toBe(true),
     );
     expect(result.current.view.page).toBe(1);
+  });
+
+  it("setPage updates the page without resetting other view state", async () => {
+    const { result } = renderHookWithStore(() => useTable("Events"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.setFilters([{ column: "name", operator: "eq", value: "alpha" }]));
+    await waitFor(() => expect(result.current.view.filters).toHaveLength(1));
+
+    act(() => result.current.setPage(3));
+    await waitFor(() => expect(result.current.view.page).toBe(3));
+    expect(result.current.view.filters).toHaveLength(1);
+  });
+
+  it("setSort resets the page to 1", async () => {
+    const { result } = renderHookWithStore(() => useTable("Events"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    act(() => result.current.setPage(5));
+    await waitFor(() => expect(result.current.view.page).toBe(5));
+
+    act(() => result.current.setSort("name", "desc"));
+    await waitFor(() => expect(result.current.view.sortBy).toBe("name"));
+    expect(result.current.view.sortDir).toBe("desc");
+    expect(result.current.view.page).toBe(1);
+  });
+
+  it("updateRow issues a PATCH and returns the updated row", async () => {
+    const { result } = renderHookWithStore(() =>
+      useTable<{ id: string; name: string }>("Events"),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let updated: { id: string; name: string } | undefined;
+    await act(async () => {
+      updated = await result.current.updateRow("1", { name: "updated" });
+    });
+    expect(updated?.name).toBe("updated");
+
+    const patchCall = fetchHandle.calls().find((c) => c.method === "PATCH");
+    expect(patchCall?.url).toContain("/db/Events/1");
+  });
+
+  it("deleteRow issues a DELETE and reports soft-delete by default", async () => {
+    const { result } = renderHookWithStore(() => useTable("Events"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let outcome: { deleted: boolean; soft: boolean } | undefined;
+    await act(async () => {
+      outcome = await result.current.deleteRow("1");
+    });
+    expect(outcome).toEqual({ deleted: true, soft: true });
+
+    const deleteCall = fetchHandle.calls().find((c) => c.method === "DELETE");
+    expect(deleteCall?.url).toContain("/db/Events/1");
+  });
+
+  it("deleteRow forwards force:true through to the request", async () => {
+    const { result } = renderHookWithStore(() => useTable("Events"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.deleteRow("1", { force: true });
+    });
+
+    const deleteCall = fetchHandle.calls().find((c) => c.method === "DELETE");
+    expect(deleteCall?.url).toContain("force=true");
+  });
+
+  it("restoreRow issues a POST to the row's /restore route", async () => {
+    const { result } = renderHookWithStore(() =>
+      useTable<{ id: string; deletedAt: string | null }>("Events"),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    let restored: { id: string; deletedAt: string | null } | undefined;
+    await act(async () => {
+      restored = await result.current.restoreRow("1");
+    });
+    expect(restored?.deletedAt).toBeNull();
+
+    const restoreCall = fetchHandle.calls().find((c) => c.url.includes("/restore"));
+    expect(restoreCall?.method).toBe("POST");
+  });
+
+  it("surfaces a fetch error instead of throwing", async () => {
+    fetchHandle.fetchMock.mockImplementationOnce(async () =>
+      jsonResponse({ message: "server error" }, 500),
+    );
+    const { result } = renderHookWithStore(() => useTable("Events"));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.rows).toEqual([]);
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it("createRow rejects when the request fails", async () => {
+    const { result } = renderHookWithStore(() => useTable("Events"));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    fetchHandle.fetchMock.mockImplementationOnce(async () =>
+      jsonResponse({ message: "invalid" }, 400),
+    );
+
+    await expect(
+      act(async () => {
+        await result.current.createRow({ name: "broken" });
+      }),
+    ).rejects.toBeTruthy();
   });
 });

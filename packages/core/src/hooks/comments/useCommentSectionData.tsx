@@ -40,6 +40,8 @@ export interface UseCommentSectionDataProps {
   callbacks?: Record<string, (...args: any[]) => void> | undefined;
   limit?: number;
   defaultSortBy?: CommentsSortByOptions;
+  /** Initial sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
+  defaultSortDir?: "asc" | "desc";
   highlightedCommentId?: string | null;
   mentionTriggers?: MentionTriggers;
 }
@@ -77,6 +79,9 @@ export interface UseCommentSectionDataValues {
   loadMore: () => void;
   sortBy: CommentsSortByOptions | null;
   setSortBy: (newSortBy: CommentsSortByOptions) => void;
+  /** Sort direction for `sortBy: "createdAt"`. */
+  sortDir: "asc" | "desc";
+  setSortDir: (newSortDir: "asc" | "desc") => void;
   pushMention: User | null;
   selectedComment: Comment | null;
   setSelectedComment: (newSelectedComment: Comment | null) => void;
@@ -108,6 +113,7 @@ function useCommentSectionData(
     createIfNotFound,
 
     defaultSortBy = "top" as CommentsSortByOptions,
+    defaultSortDir = "desc",
     limit = 15,
     callbacks: callbacksProp = {},
     highlightedCommentId,
@@ -138,6 +144,8 @@ function useCommentSectionData(
     hasMore,
     sortBy,
     setSortBy,
+    sortDir,
+    setSortDir,
     loadMore,
     addCommentsToTree,
     removeCommentFromTree,
@@ -145,6 +153,7 @@ function useCommentSectionData(
   } = useEntityComments({
     entityId: entity?.id,
     defaultSortBy,
+    defaultSortDir,
     limit,
     include: "user",
   });
@@ -508,6 +517,8 @@ function useCommentSectionData(
     loadMore,
     sortBy,
     setSortBy,
+    sortDir,
+    setSortDir,
     pushMention,
     selectedComment,
     setSelectedComment,

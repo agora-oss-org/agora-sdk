@@ -4,6 +4,7 @@ import {
   selectConversationList,
   selectConversationListHasMore,
   selectConversationListLoading,
+  selectSocketConnected,
   setConversationList,
   setConversationListLoading,
   setConversationListHasMore,
@@ -50,6 +51,7 @@ function useConversations({
   const conversations = useReplykeSelector(selectConversationList);
   const loading = useReplykeSelector(selectConversationListLoading);
   const hasMore = useReplykeSelector(selectConversationListHasMore);
+  const socketConnected = useReplykeSelector(selectSocketConnected);
 
   const typesKey = types ? [...types].sort().join(",") : "";
 
@@ -132,6 +134,28 @@ function useConversations({
     cursorRef.current = { cursor: null, cursorCreatedAt: null };
     await fetchPage(null, true);
   }, [fetchPage]);
+
+  // Reconnect reconciliation: when the socket transitions disconnected → connected,
+  // reload the first page (respecting `types`) so the inbox self-heals any order /
+  // membership / unread drift from events missed while offline. Deep pagination
+  // resets to the first page — acceptable per the PRD's "self-heal" contract.
+  // The *first* connect is skipped (the mount effect already loaded page 1), and
+  // we only react to real connected-state changes — not `refresh` identity churn
+  // when `types` changes.
+  const prevConnectedRef = useRef(socketConnected);
+  const hasConnectedOnceRef = useRef(false);
+  useEffect(() => {
+    const prev = prevConnectedRef.current;
+    if (prev === socketConnected) return;
+    prevConnectedRef.current = socketConnected;
+
+    if (socketConnected) {
+      if (hasConnectedOnceRef.current) {
+        refresh();
+      }
+      hasConnectedOnceRef.current = true;
+    }
+  }, [socketConnected, refresh]);
 
   const createGroup = useCallback(
     async (params: {

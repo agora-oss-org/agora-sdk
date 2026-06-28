@@ -59,7 +59,7 @@ function useFetchManyEntitiesWrapper(
   const {
     userId,
     limit = 10,
-    defaultSortBy = "new",
+    defaultSortBy = "createdAt",
     defaultSortByReaction = "upvote",
     defaultSortDir = "desc",
     defaultSortType = "auto",

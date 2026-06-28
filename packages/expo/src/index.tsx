@@ -8,6 +8,9 @@ import AccountManager from "./AccountManager";
 // Expo-specific OAuth hook (system browser + deep-link return)
 export { default as useOAuthSignIn, type UseOAuthSignInReturn } from "./hooks/useOAuthSignIn";
 
+// Expo-specific PushTokenAdapter (expo-notifications)
+export { expoPushTokenAdapter } from "./PushTokenAdapter";
+
 // Override ReplykeProvider
 export const ReplykeProvider: React.FC<{
   projectId: string;
