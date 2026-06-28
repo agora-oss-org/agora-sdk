@@ -8,13 +8,13 @@ upstream's improvements painless.
 
 | | |
 |---|---|
-| `upstream` | `github.com/replyke/monorepo` — the original (read-only for us) |
+| `upstream` | `github.com/jenova-marie/agora-sdk` — tracks upstream (mirrors sublay) main; read-only for us |
 | `origin` | private mirror (`git.rso`) |
 | `github` | public mirror (`github.com/jenova-marie/agora-sdk`) |
 | **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
-## What diverges from upstream (four things)
+## What diverges from upstream (five things)
 
 1. **Base-URL repoint** — committed code on `agora`, 4 files:
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
@@ -26,10 +26,18 @@ upstream's improvements painless.
    no edit of their own. Everything else derives from `getApiBaseUrl()`. `env.ts` additionally
    carries a `declare const process` guard (adopted from upstream during the sublay-rebrand sync) so
    the `typeof process` checks typecheck without `@types/node`.
-2. **`@replyke/*` → `@agora-sdk/*` rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
-   (idempotent, re-runnable). Upstream rebranded `@replyke/*` → `@sublay/*` (merged into `agora` via
-   `-s ours`, content declined), so the script now converts **both** `@replyke/` and `@sublay/`
-   quoted imports → `@agora-sdk/`. Keeping it scripted is what makes upstream merges cheap.
+2. **Scope + identifier rename** — *not* hand-edited; produced by `./rename-to-agora.sh`
+   (idempotent, re-runnable). Two passes:
+   - **Scope**: converts both `@replyke/` and `@sublay/` quoted imports → `@agora-sdk/`. Upstream
+     rebranded `@replyke/*` → `@sublay/*` (merged into `agora` via `-s ours`, content declined).
+   - **Identifiers** (added in the v7.6.2 sync): the sublay rebrand also renamed internal
+     identifiers (`ReplykeProvider` → `SublayProvider`, `useReplykeSelector` → `useSublaySelector`,
+     the `replyke` Redux reducer key, the `replyke-*` context files, etc.). The script inverts that
+     half — `Sublay` → `Replyke` / `sublay` → `replyke` across `*.ts`/`*.tsx` and file basenames,
+     running after the scope pass. Agora keeps the `Replyke*` convention.
+   Keeping both passes scripted is what makes upstream merges mechanical. Note: the script skips
+   pure `//`-comment lines for the lowercase rule, so agora comments that reference the real
+   `api.sublay.io` host or the "sublay rebrand" history are intentionally preserved.
 3. **Auth-flow behavior** — hand edits in 3 files, each marked with a `Modified from original
    @replyke/core` header (Apache-2.0 §4(b)):
    - `core/src/store/slices/authThunks.ts` + `core/src/hooks/auth/useAuth.ts`:
@@ -65,6 +73,15 @@ upstream's improvements painless.
    This is a generic fix to an inconsistency in upstream Replyke itself (the fetch hooks already take
    `include`; only `useEntityData` failed to thread it). **Strong upstream-PR candidate** — if
    contributed to Replyke it dissolves on the next merge.
+5. **Feed-ranking algorithms** — hand edit in 1 file, marked with a
+   `Modified from the original @replyke/core source.` header:
+   - `core/src/interfaces/EntityListSortByOptions.ts`: widened with `"decay"` (true exponential
+     half-life), `"gravity"` (HN), `"wilson"` (confidence), `"bayesian"` (shrunk mean) sort options —
+     the existing `top`/`hot`/`new`/`controversial`/`metadata.*` are unchanged. `fetchEntities`
+     gained optional pass-through scalars `rankParams` (JSON string of numeric tunables),
+     `rankAnchor` (pins the decay clock across paginated requests), and `rerank` (opt into the
+     server's re-rank webhook). Additive and backward-compatible. The server-side counterpart is
+     documented in the Agora server's `docs/MANIFEST.md`.
 
 ### Previously diverged, now dissolved into upstream
 
@@ -100,7 +117,9 @@ git merge main
 #   - The 4 base-URL files above are the likely conflict spots if upstream refactors them —
 #     re-apply our env-driven version, keeping upstream's surrounding logic.
 
-# 3. Re-apply the scope to any NEW @replyke/@sublay refs upstream introduced (idempotent)
+# 3. Re-apply scope + identifiers to any NEW upstream code (idempotent).
+#    NEW upstream files arrive with @sublay/* scope and Sublay*/sublay* identifiers — the script
+#    converts both passes deterministically.
 ./rename-to-agora.sh
 
 # 4. Relink + verify
@@ -116,9 +135,15 @@ git push origin agora && git push github agora
 
 Git only conflicts when **both** sides change the **same lines**. Upstream never touches our
 `@agora-sdk` rename (they use `@sublay`, formerly `@replyke`), so the rename almost never conflicts
-— and when a new `@sublay` (or legacy `@replyke`) reference arrives from upstream, step 3 converts
-it deterministically. The real review surface each sync is the 4 base-URL files plus the 2 auth-flow
-files (divergence #3) — keep those edits surgical and syncing remains a few minutes of work.
+— and when a new `@sublay` (or legacy `@replyke`) reference or `Sublay*` identifier arrives from
+upstream, step 3 converts it deterministically. The real review surface each sync is the 4
+base-URL files plus the 2 auth-flow files (divergence #3) and `EntityListSortByOptions.ts`
+(divergence #5) — keep those edits surgical and syncing remains a few minutes of work.
+
+Each sync may also require adapting a handful of merged-in upstream **test fixtures** — because
+agora runs `tsc` over tests (upstream uses vitest/esbuild, which skips typechecking) and because
+agora's 401-refresh and runtime base-URL divergences change what those tests assert. This is
+expected, not a divergence in product behavior (the v7.6.2 sync adapted 8 such fixtures).
 
 > ⚠️ Never commit `@agora-sdk` names onto `main` — it must stay a clean mirror of upstream so step 1
 > always fast-forwards.

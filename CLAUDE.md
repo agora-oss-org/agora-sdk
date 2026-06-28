@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Agora is a fork of [replyke/monorepo](https://github.com/replyke/monorepo), rescoped to
 `@agora-sdk/*` and repointed at an [Agora server](https://github.com/jenova-marie/agora). The
 fork's entire value is that its divergence from upstream is **tiny and documented**, which keeps
-upstream merges cheap. Before editing, understand the branch model and the four divergences —
+upstream merges cheap. Before editing, understand the branch model and the five divergences —
 full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Branches:**
@@ -17,7 +17,7 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
 | `main` | Mirrors `upstream/main` **verbatim** — original `@replyke/*` names, **no edits**. Never commit fork work here. |
 | `agora` | The working branch and repo default. `@agora-sdk/*` scope + the Agora changes. All work and PRs land here. |
 
-**The only things that diverge from upstream — keep edits within these, don't add new fork points:**
+**The only things that diverge from upstream — keep edits within these, don't add new fork points (five total):**
 
 1. **Base-URL repoint** (4 files: `core/src/utils/env.ts`, `core/src/config/axios.ts`,
    `core/src/context/chat-context.tsx`, `core/src/hooks/auth/oauthCore.ts` — the OAuth helper
@@ -26,9 +26,12 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
    API base URL from the `baseUrl` prop on `ReplykeProvider` via `getApiBaseUrl()` (default
    `http://localhost:4000/v7`), **not** from env-var auto-detection. Everything reads it lazily,
    per-request, so the injected value always wins.
-2. **The `@replyke/*` → `@agora-sdk/*` rename is scripted, not hand-edited** — produced by
-   `./rename-to-agora.sh` (idempotent, re-runnable). When merging upstream, let the script convert
-   any `@replyke/*` references; don't rename imports by hand.
+2. **Scope + identifier rename is scripted, not hand-edited** — produced by `./rename-to-agora.sh`
+   (idempotent, re-runnable). Two passes: (a) converts both `@replyke/` and `@sublay/` quoted
+   imports → `@agora-sdk/`; (b) inverts upstream's sublay rebrand for identifiers —
+   `Sublay*`/`sublay*` → `Replyke*`/`replyke*` across `*.ts`/`*.tsx` and file basenames — so agora
+   keeps the `Replyke*` convention. When merging upstream, let the script handle all conversions;
+   don't rename imports or identifiers by hand.
 3. **Auth-flow behavior** (2 files, each carrying a `Modified from original @replyke/core` Apache-2.0
    §4(b) header that must be preserved): `signUpWithEmailAndPassword` resolves to a `SignUpResult`
    union (`signed_in` | `confirmation_required`) instead of `void`; sign-out always clears local
@@ -37,10 +40,14 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
    authorization denials) — upstream keys off 403, so don't revert it on merge. (The old
    `useAccountSync` sub-match guard dissolved in the v7.4.x sync — upstream shipped a better version;
    see SYNCING.md "Previously diverged, now dissolved into upstream.")
-4. **Entity `include` passthrough** (1 file, with the `Modified from original @replyke/core` header):
+4. **Entity `include` passthrough** (1 file, with the `Modified from the original @replyke/core source.` header):
    `core/src/hooks/entities/useEntityData.tsx` threads an optional `include` into the single-entity
    fetch hooks so `EntityProvider` can load related data (e.g. the author via `include={["user"]}`).
    Additive; a generic fix to an upstream inconsistency and a strong upstream-PR candidate.
+5. **Feed-ranking algorithms** (1 file, with the `Modified from the original @replyke/core source.` header):
+   `core/src/interfaces/EntityListSortByOptions.ts` is widened with `"decay"`, `"gravity"`,
+   `"wilson"`, and `"bayesian"` sort options plus `rankParams`/`rankAnchor` passthrough scalars.
+   Additive and backward-compatible; the server-side counterpart is the Agora ranking engine.
 
 The auth files (#3) are the likely merge-conflict spots if upstream refactors auth — re-apply by
 hand, preserve upstream's surrounding logic, and keep the headers.
@@ -90,7 +97,7 @@ entries are renamed to the new version and a fresh empty `[Unreleased]` section 
 
 ## Architecture
 
-The repo ships **four published packages** (all currently `1.2.1`; internal refs via `workspace:*`):
+The repo ships **four published packages** (all currently `1.4.0`; internal refs via `workspace:*`):
 
 | Package | Role |
 |---|---|
@@ -104,8 +111,9 @@ The repo ships **four published packages** (all currently `1.2.1`; internal refs
 
 ### The model: providers + hooks
 
-State flows through React Context providers, consumed via hooks. Code keeps the upstream
-`Replyke*` identifiers (only the package scope is rebranded). Key providers (in
+State flows through React Context providers, consumed via hooks. Code keeps the `Replyke*`
+identifier convention (the npm scope is `@agora-sdk/*`; `rename-to-agora.sh` inverts both the
+upstream `@sublay/*` scope and the `Sublay*`/`sublay*` identifier rebrand). Key providers (in
 `core/src/context/`): `ReplykeProvider` (root — project config, `baseUrl`, auth token),
 `EntityProvider` / `EntityListProvider` (single entity / filtered+sorted collections),
 `CommentSectionProvider`, `AuthProvider`, `ListsProvider`, plus chat/space/conversation contexts.
