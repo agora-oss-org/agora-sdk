@@ -1,6 +1,7 @@
 name: Publish
 
-# Publishes all @agora-sdk/* packages to npm when a version tag is pushed.
+# Publishes all @agora-sdk/* packages to npm when a version tag is pushed, then
+# creates the matching GitHub Release with notes from CHANGELOG.md.
 #
 # Cut a release with one command (bumps all packages, commits, tags, pushes):
 #
@@ -19,7 +20,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  contents: write   # create/edit the GitHub Release for the pushed tag
 
 jobs:
   publish:
@@ -69,3 +70,50 @@ jobs:
           publish --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release from CHANGELOG
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES="$(mktemp)"
+          # Extract this version's section: everything between "## [VERSION]" and the
+          # next "## " heading, or the "[link]: url" reference block at the file's foot
+          # (so the last/oldest section doesn't swallow the link definitions).
+          awk -v ver="## [$VERSION]" '
+            index($0, ver)==1 {f=1; next}
+            f && (/^## / || /^\[[^][]+\]: /) {exit}
+            f {print}
+          ' CHANGELOG.md > "$NOTES"
+
+          if grep -q '[^[:space:]]' "$NOTES"; then
+            # Append a compare link to the previous release — the next version header
+            # listed below this one in the CHANGELOG — or the CHANGELOG file if none.
+            PREV="$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md \
+                    | sed -E 's/^## \[([0-9.]+)\]/\1/' \
+                    | awk -v v="$VERSION" 'p{print "v"$0; exit} $0==v{p=1}')"
+            if [ -n "$PREV" ]; then
+              printf '\n**Full changelog:** https://github.com/%s/compare/%s...%s\n' \
+                "$GITHUB_REPOSITORY" "$PREV" "$GITHUB_REF_NAME" >> "$NOTES"
+            else
+              printf '\n**Full changelog:** https://github.com/%s/blob/%s/CHANGELOG.md\n' \
+                "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" >> "$NOTES"
+            fi
+            HAVE_NOTES=1
+          else
+            echo "No CHANGELOG section for $VERSION — using GitHub auto-generated notes."
+            HAVE_NOTES=0
+          fi
+
+          # Idempotent: create the release, or refresh its notes if a re-run already made it.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            if [ "$HAVE_NOTES" = 1 ]; then
+              gh release edit "$GITHUB_REF_NAME" --notes-file "$NOTES"
+            else
+              echo "Release already exists and no CHANGELOG section — leaving notes as-is."
+            fi
+          elif [ "$HAVE_NOTES" = 1 ]; then
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$NOTES"
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --generate-notes
+          fi

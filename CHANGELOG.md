@@ -11,6 +11,13 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Changed
+- **`publish.yml` now also creates the GitHub Release for each pushed `v*` tag.** After publishing to
+  npm, the workflow extracts the matching `CHANGELOG.md` section as the release notes (appending a
+  `compare/...` footer to the previous release), falling back to GitHub auto-generated notes when no
+  section exists. Idempotent on re-runs (edits an existing release rather than failing). Requires the
+  workflow's `contents: write` permission.
+
 ## [1.4.0] - 2026-06-28
 
 ### Added
