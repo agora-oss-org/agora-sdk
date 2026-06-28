@@ -310,3 +310,84 @@ authenticated/persisted state — with the MPA pattern from §6.1 shown.
 | Reliable full logout (§5, §6.2) | `packages/core/src/hooks/auth/useSignOutAll.ts` |
 | SPA reference integration | `agora-demo/src/Login.tsx`, `agora-demo/src/Shell.tsx` |
 | MPA integration that worked | `agora-www/src/components/comments/OAuthCallback.tsx`, `.../Thread.tsx` |
+
+---
+
+# Addendum — field-testing `@agora-sdk/auth-react-js@0.9.1`
+
+`@agora-sdk/auth-react-js` shipped (it cites this report's P1/P3/P4/P5/P6/P7) and `agora-www` migrated
+to it: `useOAuthCallback` for the callback page, `useAuthStatus` for the auth-ready signal,
+`useSignOutEverywhere` for logout, `useAuthSelfHeal` mounted on the thread. The hand-rolled workarounds
+in §6 are gone and the storage-contract coupling is now quarantined in the package — a clear win.
+Field-testing then surfaced **one more failure mode** the package does not yet handle.
+
+## A8 — `useOAuthCallback`'s success gate is clobbered by a stale account's boot-refresh 🔴 · Priority: High · Effort: Small
+
+### Symptom
+
+A successful OAuth round-trip lands on the callback page, which **hangs on the spinner and then shows
+the timeout/error state** ("Sign-in didn't complete") — **yet the user is actually signed in**: a
+manual page refresh boots straight into the authenticated thread. Intermittent. The console shows a
+single `POST /auth/request-new-access-token → 401`.
+
+### Root cause
+
+The callback page boots with a **stale active account** already in `localStorage` (a refresh token
+rotated away server-side — the same P6 condition `useAuthSelfHeal` exists for, but on a page where it
+isn't mounted). Two flows then run concurrently in the callback document:
+
+1. **SDK boot-refresh of the stale active account** → `401 unknown token` → the failure path resets
+   in-store auth (`accessToken` → null).
+2. **The fresh OAuth flow** (`handleOAuthCallback`) → stages new tokens, fetches the user, and
+   `useAccountSync` **persists the new account to `localStorage`** (Phase C) — this part succeeds.
+
+`useOAuthCallback`'s navigation gate (`useOAuthCallback.ts`) requires the **in-store** `accessToken`
+*and* `user.id` *and* the persisted row to agree:
+
+```ts
+if (!accessToken || !user?.id || !projectId) return;        // in-STORE auth …
+if (!hasPersistedRefreshToken(projectId, user.id)) return;  // … AND the persisted row
+```
+
+Flow 1 clobbers the in-store `accessToken` that flow 2 set, so the gate never fires and the hook rides
+to `onTimeout` — **even though the persisted row (the thing the next document actually boots from) is
+correct.** Hence: timeout UI now, but authenticated after a refresh.
+
+This is the **same "two refresh tokens in play" race** documented in §3 — it survived into the package
+because the gate trusts volatile in-store state that a competing failure can reset.
+
+### Integration-level defense (shipped in `agora-www`)
+
+The fresh-login entry point (`AuthPanel`) only renders when **unauthenticated**, so any persisted
+account at that moment is stale by definition. We prune it **before** the OAuth redirect, so the
+callback document boots clean — no competing refresh, no clobber:
+
+```ts
+// AuthPanel.onOAuth, before initiateOAuth(...)
+if (projectId) {
+  const map = readAccountMap(projectId);
+  if (map) for (const id of Object.keys(map.accounts)) pruneAccount(projectId, id);
+}
+```
+
+This is deterministic, but it's a workaround every MPA integrator would have to rediscover — exactly
+the kind of thing the package should absorb.
+
+### Suggested package fix (pick one or combine)
+
+1. **Gate on the persisted row, not volatile in-store auth.** Success = `hasPersistedRefreshToken`
+   landed for *some* account (then read that account's id back from the map). The persisted row is the
+   real contract with the next document; in-store `accessToken` is incidental and resettable.
+2. **Self-heal before parsing the callback.** Have `useOAuthCallback` prune a dead active account up
+   front (the `useAuthSelfHeal` logic) so no stale boot-refresh competes with the fresh login.
+3. **Don't let a stale-account refresh failure reset auth that a newer `setTokens` just established**
+   — an ordering/guard fix one level down in the SDK (`oauthCore`/auth thunks), the cleanest of the
+   three but the deepest.
+
+### Repro / appendix refs
+
+- Package gate: `packages/auth/react-js/src/useOAuthCallback.ts`
+- Storage seam used by the workaround: `packages/auth/react-js/src/accountStorage.ts`
+  (`readAccountMap`, `pruneAccount`)
+- Defense in our app: `agora-www/src/components/comments/AuthPanel.tsx` (`onOAuth`)
+- Manual unstick: `localStorage.removeItem("replyke-accounts:<projectId>")`
