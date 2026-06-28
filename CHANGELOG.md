@@ -14,6 +14,31 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 ## [1.4.0] - 2026-06-28
 
 ### Added
+- **Synced upstream feature work through v7.6.2** (`@sublay/* → @agora-sdk/*` and `Sublay*` →
+  `Replyke*` identifiers via `rename-to-agora.sh`). New capabilities in `@agora-sdk/*`: web/native/Expo
+  **push notifications** (`PushTokenAdapter` + `usePushRegistration`; `webPushTokenAdapter`,
+  RN Firebase messaging adapter, Expo `expo-notifications` adapter), an **events bundle**
+  (`EventProvider` + events hooks), **comment sorting** by `createdAt` with `sortDir` and a
+  `controversial` option (`new`/`old` deprecated), entity `createdAt` sortBy (with the
+  `DeprecatedNewSortBy` alias), a **live conversation list** with socket-reconnect reconciliation in
+  `useConversations`, the space-list strictly-true boolean-flag fix, and a large vitest coverage
+  expansion across all four packages.
+
+### Changed
+- **`rename-to-agora.sh` now reconciles identifiers, not just the package scope.** Upstream's
+  replyke→sublay rebrand renamed identifiers (`ReplykeProvider`→`SublayProvider`,
+  `useReplykeSelector`→`useSublaySelector`, the `replyke` reducer key, the `replyke-*` context files,
+  etc.). The script inverts that half — `Sublay`→`Replyke` / `sublay`→`replyke` across `*.ts`/`*.tsx`
+  and file basenames, after the scope rules — so merges stay mechanical. Divergence #2 in SYNCING.md
+  grows from "scope only" to "scope + identifiers".
+- **Adapting a few merged-in upstream test fixtures is now an expected per-sync cost.** Agora runs
+  `tsc` over its tests (upstream uses vitest/esbuild, which skips typechecking) and the 401-refresh +
+  runtime base-URL divergences change what some tests assert; this sync adjusted 8 such fixtures
+  (5 typecheck-only, 3 to configure `baseUrl`). Not a product-behavior divergence — see SYNCING.md.
+
+## [1.3.0] - 2026-06-18
+
+### Added
 - **`docs/KNOWN_ISSUES.md`** documenting the inherited bundler-only packaging behavior: the published
   `@agora-sdk/*` packages are not importable by Node's native ESM/CJS loader (extensionless ESM
   specifiers, CJS under `"type":"module"` with no marker, no `exports` map). It works for all bundled
@@ -38,15 +63,6 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   (`useChatMessages` is now a `@deprecated` forwarder), `ConversationPreview.otherMembers` +
   `memberIds` in `createGroup`, an Expo `useOAuthSignIn` hook, `GifData` `altText`/`aspectRatio`
   typed as `string`, and a `vitest` test harness (`pnpm --filter @agora-sdk/core run test`).
-- **Synced upstream feature work through v7.6.2** (`@sublay/* → @agora-sdk/*` and `Sublay*` →
-  `Replyke*` identifiers via `rename-to-agora.sh`). New capabilities in `@agora-sdk/*`: web/native/Expo
-  **push notifications** (`PushTokenAdapter` + `usePushRegistration`; `webPushTokenAdapter`,
-  RN Firebase messaging adapter, Expo `expo-notifications` adapter), an **events bundle**
-  (`EventProvider` + events hooks), **comment sorting** by `createdAt` with `sortDir` and a
-  `controversial` option (`new`/`old` deprecated), entity `createdAt` sortBy (with the
-  `DeprecatedNewSortBy` alias), a **live conversation list** with socket-reconnect reconciliation in
-  `useConversations`, the space-list strictly-true boolean-flag fix, and a large vitest coverage
-  expansion across all four packages.
 
 ### Fixed
 - **Chat store no longer holds a non-serializable `Date` (Redux Toolkit `serializableCheck` warning).**
@@ -84,12 +100,6 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   `requestOAuthAuthorizationUrl` now defaults `baseUrl` to `getApiBaseUrl()` instead of upstream's
   hardcoded `https://api.sublay.io/v7`, so self-hosted Agora OAuth follows the injected base URL. The
   `react-js`/`expo` `useOAuthSignIn` hooks call into `oauthCore`, so they inherit the repoint.
-- **`rename-to-agora.sh` now reconciles identifiers, not just the package scope.** Upstream's
-  replyke→sublay rebrand renamed identifiers (`ReplykeProvider`→`SublayProvider`,
-  `useReplykeSelector`→`useSublaySelector`, the `replyke` reducer key, the `replyke-*` context files,
-  etc.). The script inverts that half — `Sublay`→`Replyke` / `sublay`→`replyke` across `*.ts`/`*.tsx`
-  and file basenames, after the scope rules — so merges stay mechanical. Divergence #2 in SYNCING.md
-  grows from "scope only" to "scope + identifiers".
 
 ## [1.2.2] - 2026-05-31
 
@@ -253,7 +263,7 @@ are folded in here).
 
 [Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.4.0...agora
 [1.4.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.3.0
+[1.3.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.2.2
 [1.2.1]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.2.1
 [1.2.0]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.2.0
