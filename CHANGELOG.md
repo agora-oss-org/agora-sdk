@@ -11,6 +11,8 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-03
+
 ### Added
 - **`emailRedirectTo` on native-auth email requests** (divergence #6 — see SYNCING.md). Sign-up,
   request-password-reset, and send-verification-email now include an `emailRedirectTo` origin so the
