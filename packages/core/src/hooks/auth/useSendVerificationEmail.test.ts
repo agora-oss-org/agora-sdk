@@ -1,10 +1,11 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
 import useSendVerificationEmail from "./useSendVerificationEmail";
 
 afterEach(() => {
   resetAxiosMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("useSendVerificationEmail", () => {
@@ -21,7 +22,7 @@ describe("useSendVerificationEmail", () => {
 
     const [call] = axiosPublic.calls("post");
     expect(call.url).toBe("/test-project/auth/send-verification-email");
-    expect(call.body).toEqual({});
+    expect(call.body).toEqual({ emailRedirectTo: window.location.origin });
   });
 
   it("passes mode/tokenFormat/tokenLength/redirectUrl through", async () => {
@@ -44,6 +45,7 @@ describe("useSendVerificationEmail", () => {
       tokenFormat: "alphanumeric",
       tokenLength: 32,
       redirectUrl: "https://app.example.com/verify",
+      emailRedirectTo: window.location.origin,
     });
   });
 
@@ -67,5 +69,18 @@ describe("useSendVerificationEmail", () => {
 
     await expect(result.current()).rejects.toThrow("No projectId available.");
     expect(axiosPublic.calls("post")).toHaveLength(0);
+  });
+
+  it("omits emailRedirectTo when no origin resolves (RN path)", async () => {
+    const { result, axiosPublic } = renderHookWithAxios(() =>
+      useSendVerificationEmail(),
+    );
+    axiosPublic.mockResponse("post", { success: true });
+
+    vi.stubGlobal("window", undefined); // AFTER render — rendering needs the DOM
+    await result.current();
+    vi.unstubAllGlobals();
+
+    expect(axiosPublic.calls("post")[0].body).toEqual({});
   });
 });

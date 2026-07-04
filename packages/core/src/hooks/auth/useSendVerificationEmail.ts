@@ -1,6 +1,12 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — sends `emailRedirectTo` so the emailed
+// confirmation link returns the user to the front-end that initiated the request.
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
+
 import { useCallback } from "react";
 import axios from "../../config/axios";
 import useProject from "../projects/useProject";
+import { getEmailRedirectTo } from "../../config/runtime";
 
 export interface SendVerificationEmailProps {
   mode?: "code" | "link";
@@ -18,9 +24,13 @@ function useSendVerificationEmail(): (props?: SendVerificationEmailProps) => Pro
         throw new Error("No projectId available.");
       }
 
+      const emailRedirectTo = getEmailRedirectTo();
       const response = await axios.post(
         `/${projectId}/auth/send-verification-email`,
-        props ?? {}
+        {
+          ...(emailRedirectTo ? { emailRedirectTo } : {}),
+          ...props,
+        }
       );
 
       return response.data;
