@@ -1,10 +1,11 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 import { renderHookWithAxios, resetAxiosMocks } from "../../test-utils";
 import useRequestPasswordReset from "./useRequestPasswordReset";
 
 afterEach(() => {
   resetAxiosMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("useRequestPasswordReset", () => {
@@ -21,7 +22,25 @@ describe("useRequestPasswordReset", () => {
 
     const [call] = axiosPublic.calls("post");
     expect(call.url).toBe("/test-project/auth/request-password-reset");
-    expect(call.body).toEqual({ email: "alice@example.com" });
+    expect(call.body).toEqual({
+      email: "alice@example.com",
+      emailRedirectTo: window.location.origin,
+    });
+  });
+
+  it("omits emailRedirectTo when no origin resolves (RN path)", async () => {
+    const { result, axiosPublic } = renderHookWithAxios(() =>
+      useRequestPasswordReset(),
+    );
+    axiosPublic.mockResponse("post", { success: true, message: "Email sent" });
+
+    vi.stubGlobal("window", undefined); // AFTER render — rendering needs the DOM
+    await result.current({ email: "alice@example.com" });
+    vi.unstubAllGlobals();
+
+    expect(axiosPublic.calls("post")[0].body).toEqual({
+      email: "alice@example.com",
+    });
   });
 
   it("rejects when the server returns an error response", async () => {
