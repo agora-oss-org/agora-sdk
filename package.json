@@ -34,8 +34,6 @@
     "major": "bash scripts/release.sh major",
     "minor": "bash scripts/release.sh minor",
     "patch": "bash scripts/release.sh patch",
-    "version:patch": "pnpm --filter @agora-sdk/core --filter @agora-sdk/expo --filter @agora-sdk/react-js --filter @agora-sdk/react-native exec npm version patch --no-git-tag-version",
-    "version:minor": "pnpm --filter @agora-sdk/core --filter @agora-sdk/expo --filter @agora-sdk/react-js --filter @agora-sdk/react-native exec npm version minor --no-git-tag-version",
     "build-all": "pnpm --filter @agora-sdk/core run build && pnpm --filter @agora-sdk/react-js run build && pnpm --filter @agora-sdk/react-native run build && pnpm --filter @agora-sdk/expo run build",
     "publish-prod": "pnpm --filter @agora-sdk/core --filter @agora-sdk/expo --filter @agora-sdk/react-js --filter @agora-sdk/react-native publish",
     "publish-beta": "pnpm --filter @agora-sdk/core --filter @agora-sdk/expo --filter @agora-sdk/react-js --filter @agora-sdk/react-native publish --tag beta",

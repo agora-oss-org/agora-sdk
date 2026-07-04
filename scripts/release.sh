@@ -37,6 +37,9 @@ pnpm \
   --filter @agora-sdk/react-native \
   exec npm version "$BUMP" --no-git-tag-version
 
+# Also bump the root monorepo package.json to keep versions in sync.
+npm version "$BUMP" --no-git-tag-version
+
 VERSION="$(node -p "require('./packages/core/package.json').version")"
 TAG="v$VERSION"
 
@@ -47,6 +50,7 @@ if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
 fi
 
 git add \
+  package.json \
   packages/core/package.json \
   packages/expo/package.json \
   packages/react-js/package.json \
