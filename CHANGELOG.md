@@ -11,6 +11,8 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-07-04
+
 ### Added
 - **`Agora*` public-API aliases** (divergence #7 — see SYNCING.md). Additive re-exports let consumers
   write `<AgoraProvider>` (plus `AgoraIntegrationProvider`, `AgoraState`, `useAgoraSelector`,
