@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 import { makeReplykeStore, mockAxiosPublic, resetAxiosMocks } from "../../test-utils";
 import {
@@ -16,6 +16,7 @@ import type { AuthUser } from "../../interfaces/models/User";
 
 afterEach(() => {
   resetAxiosMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("signUpWithEmailAndPasswordThunk", () => {
@@ -42,6 +43,55 @@ describe("signUpWithEmailAndPasswordThunk", () => {
     expect(selectUserSliceUser(state)).toEqual(user);
 
     expect(axios.calls("post")[0].url).toBe("/project-1/auth/sign-up");
+    expect(axios.calls("post")[0].body).toMatchObject({
+      email: "a@b.com",
+      emailRedirectTo: window.location.origin,
+    });
+  });
+
+  it("appends emailRedirectTo to the FormData body when uploading an avatar", async () => {
+    const store = makeReplykeStore();
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+      user: { id: "user-1" },
+    });
+
+    await store.dispatch(
+      signUpWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "a@b.com",
+        password: "secret",
+        avatarFile: new Blob(["img"], { type: "image/png" }),
+      }),
+    );
+
+    const body = axios.calls("post")[0].body as FormData;
+    expect(body).toBeInstanceOf(FormData);
+    expect(body.get("emailRedirectTo")).toBe(window.location.origin);
+  });
+
+  it("omits emailRedirectTo when no origin resolves (RN path)", async () => {
+    const store = makeReplykeStore();
+    const axios = mockAxiosPublic();
+    axios.mockResponse("post", {
+      accessToken: "access-1",
+      refreshToken: "refresh-1",
+      user: { id: "user-1" },
+    });
+    vi.stubGlobal("window", undefined);
+
+    await store.dispatch(
+      signUpWithEmailAndPasswordThunk({
+        projectId: "project-1",
+        email: "a@b.com",
+        password: "secret",
+      }),
+    );
+    vi.unstubAllGlobals();
+
+    expect(axios.calls("post")[0].body).not.toHaveProperty("emailRedirectTo");
   });
 });
 

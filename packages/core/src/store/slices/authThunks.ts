@@ -1,10 +1,12 @@
 // Modified from the original @replyke/core source.
 // Modifications Copyright 2026 Jenova Marie — sign-out now always clears local auth
-// state even if the server revoke fails, and signUpWithEmailAndPassword returns a
-// SignUpResult instead of void to surface the email-confirmation flow.
+// state even if the server revoke fails, signUpWithEmailAndPassword returns a
+// SignUpResult instead of void to surface the email-confirmation flow, and sign-up
+// sends `emailRedirectTo` so confirmation links return to the originating front-end.
 // Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../config/axios";
+import { getEmailRedirectTo } from "../../config/runtime";
 
 import { handleError } from "../../utils/handleError";
 import type { RootState } from "../index";
@@ -43,6 +45,8 @@ const authService = {
       bannerOptions?: any;
     }
   ) {
+    const emailRedirectTo = getEmailRedirectTo();
+
     // Check if we need to use FormData (when files are present)
     if (data.avatarFile || data.bannerFile) {
       const formData = new FormData();
@@ -57,6 +61,7 @@ const authService = {
       if (data.birthdate) formData.append("birthdate", data.birthdate.toISOString());
       if (data.metadata) formData.append("metadata", JSON.stringify(data.metadata));
       if (data.secureMetadata) formData.append("secureMetadata", JSON.stringify(data.secureMetadata));
+      if (emailRedirectTo) formData.append("emailRedirectTo", emailRedirectTo);
 
       // Append avatar file and options
       if (data.avatarFile) {
@@ -99,6 +104,7 @@ const authService = {
         birthdate: data.birthdate,
         metadata: data.metadata,
         secureMetadata: data.secureMetadata,
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       },
     );
 
