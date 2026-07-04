@@ -11,6 +11,16 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Added
+- **`Agora*` public-API aliases** (divergence #7 — see SYNCING.md). Additive re-exports let consumers
+  write `<AgoraProvider>` (plus `AgoraIntegrationProvider`, `AgoraState`, `useAgoraSelector`,
+  `useAgoraDispatch`) instead of the `Replyke*` names. Added at the EOF of `core/src/index.ts` and, for
+  the account-glue provider, in each platform entry (`react-js`/`react-native`/`expo` `src/index.tsx`,
+  which alias their own AccountManager-injecting `ReplykeProvider` override). **Aliases, not renames** —
+  the `Replyke*` internals are unchanged (renaming them would conflict on ~880 identifier lines every
+  upstream merge; an alias is a few isolated additive lines). The `Replyke*` originals remain exported
+  for back-compat. Committed code on `agora`, not part of `rename-to-agora.sh`.
+
 ## [1.5.0] - 2026-07-03
 
 ### Added

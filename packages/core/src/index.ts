@@ -1,5 +1,6 @@
 // Modified from the original @replyke/core source.
-// Modifications Copyright 2026 Jenova Marie — export the new SignUpResult type.
+// Modifications Copyright 2026 Jenova Marie — export the new SignUpResult type; add
+// additive Agora* aliases for the public API (divergence #7, see block at EOF).
 // Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 
 // Helpers & Utilities
@@ -787,3 +788,20 @@ export {
   selectSocketConnected,
   type ChatState,
 } from "./store/slices/chatSlice";
+
+// ── Agora* public-API aliases (divergence #7) ────────────────────────────────
+// Additive re-exports so consumers can write <AgoraProvider> etc. Internals keep
+// the Replyke* convention so upstream merges stay clean (a rename would conflict
+// on every identifier line; an alias is a handful of isolated lines). Originals
+// remain exported for back-compat. See CLAUDE.md / SYNCING.md #7.
+// NOTE: the react-js / react-native / expo entries re-export AgoraProvider from
+// their own AccountManager-injecting ReplykeProvider override, shadowing this one.
+export {
+  ReplykeProvider as AgoraProvider,
+  ReplykeIntegrationProvider as AgoraIntegrationProvider,
+} from "./context";
+export { type ReplykeState as AgoraState } from "./store/integration";
+export {
+  useReplykeDispatch as useAgoraDispatch,
+  useReplykeSelector as useAgoraSelector,
+} from "./store/hooks";

@@ -28,3 +28,8 @@ export const ReplykeProvider: React.FC<{
     </CoreReplykeProvider>
   );
 };
+
+// Agora divergence #7: additive alias so web consumers can write <AgoraProvider>.
+// Points at the local override (with AccountManager), shadowing core's alias.
+// See CLAUDE.md / SYNCING.md #7.
+export const AgoraProvider = ReplykeProvider;

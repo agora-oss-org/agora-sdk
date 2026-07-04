@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Agora is a fork of [replyke/monorepo](https://github.com/replyke/monorepo), rescoped to
 `@agora-sdk/*` and repointed at an [Agora server](https://github.com/jenova-marie/agora). The
 fork's entire value is that its divergence from upstream is **tiny and documented**, which keeps
-upstream merges cheap. Before editing, understand the branch model and the six divergences —
+upstream merges cheap. Before editing, understand the branch model and the seven divergences —
 full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Branches:**
@@ -17,7 +17,7 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
 | `main` | Mirrors `upstream/main` **verbatim** — original `@replyke/*` names, **no edits**. Never commit fork work here. |
 | `agora` | The working branch and repo default. `@agora-sdk/*` scope + the Agora changes. All work and PRs land here. |
 
-**The only things that diverge from upstream — keep edits within these, don't add new fork points (six total):**
+**The only things that diverge from upstream — keep edits within these, don't add new fork points (seven total):**
 
 1. **Base-URL repoint** (4 files: `core/src/utils/env.ts`, `core/src/config/axios.ts`,
    `core/src/context/chat-context.tsx`, `core/src/hooks/auth/oauthCore.ts` — the OAuth helper
@@ -55,6 +55,15 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
    `emailRedirectTo` origin (resolved by `getEmailRedirectTo()`: `AGORA_EMAIL_REDIRECT_TO` env var
    → `window.location.origin` → omitted) so emailed links return to the originating front-end.
    Additive; no `ReplykeProvider` prop by design. See SYNCING.md #6.
+7. **`Agora*` public-API aliases** (4 files — `core/src/index.ts` plus the three platform entries
+   `react-js`/`react-native`/`expo` `src/index.tsx`): additive re-exports so consumers can write
+   `<AgoraProvider>` (and `AgoraIntegrationProvider`, `AgoraState`, `useAgoraSelector`,
+   `useAgoraDispatch`). **Aliases, not renames** — internals keep the `Replyke*` convention so
+   upstream merges stay clean (renaming the identifiers would conflict on ~880 lines every sync; an
+   alias is a handful of isolated EOF lines). Originals stay exported for back-compat. The platform
+   entries alias their own AccountManager-injecting `ReplykeProvider` override, shadowing core's
+   alias. Do **not** move this into `rename-to-agora.sh` — it's committed code (like the base-URL
+   repoint), not a mechanical re-scope. See SYNCING.md #7.
 
 The auth files (#3) are the likely merge-conflict spots if upstream refactors auth — re-apply by
 hand, preserve upstream's surrounding logic, and keep the headers.

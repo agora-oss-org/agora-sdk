@@ -14,7 +14,7 @@ upstream's improvements painless.
 | **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
-## What diverges from upstream (six things)
+## What diverges from upstream (seven things)
 
 1. **Base-URL repoint** — committed code on `agora`, 4 files:
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
@@ -99,6 +99,24 @@ upstream's improvements painless.
      files clean for upstream merges; the server-side counterpart (validation against
      `AUTH_EMAIL_LINK_ALLOWED_ORIGINS`, `400 auth/email-redirect-not-allowed` on mismatch) is
      documented in the Agora server's `docs/MANIFEST.md`.
+7. **`Agora*` public-API aliases** — hand edits in 4 files (additive; `core/src/index.ts` extended
+   its existing `Modified from original @replyke/core` header, the platform entries carry an inline
+   `Agora divergence #7` note):
+   - `core/src/index.ts`: an EOF block re-exports `ReplykeProvider as AgoraProvider`,
+     `ReplykeIntegrationProvider as AgoraIntegrationProvider`, `ReplykeState as AgoraState`,
+     `useReplykeSelector as useAgoraSelector`, `useReplykeDispatch as useAgoraDispatch`.
+   - `packages/{react-js,react-native,expo}/src/index.tsx`: each adds
+     `export const AgoraProvider = ReplykeProvider`, pointing at that package's own
+     AccountManager-injecting `ReplykeProvider` override, so the platform `AgoraProvider` shadows
+     core's re-export and carries the account glue.
+
+   **Aliases, not renames — this is the whole point.** Renaming the `Replyke*` identifiers to
+   `Agora*` would make every provider/hook/type identifier line diverge from upstream and conflict on
+   each merge (~880 sites); an alias is a handful of isolated, additive lines that never collide. The
+   `Replyke*` originals stay exported for back-compat. Because it's committed code, it lives on the
+   `agora` branch like the base-URL repoint — **not** in `rename-to-agora.sh`, which only does the
+   mechanical scope/identifier re-scope of upstream's names. On merge, these EOF/append blocks are
+   very unlikely to conflict; if upstream restructures the entry files, re-apply the aliases by hand.
 
 ### Previously diverged, now dissolved into upstream
 
