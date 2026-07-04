@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Agora is a fork of [replyke/monorepo](https://github.com/replyke/monorepo), rescoped to
 `@agora-sdk/*` and repointed at an [Agora server](https://github.com/jenova-marie/agora). The
 fork's entire value is that its divergence from upstream is **tiny and documented**, which keeps
-upstream merges cheap. Before editing, understand the branch model and the five divergences —
+upstream merges cheap. Before editing, understand the branch model and the six divergences —
 full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Branches:**
@@ -17,7 +17,7 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
 | `main` | Mirrors `upstream/main` **verbatim** — original `@replyke/*` names, **no edits**. Never commit fork work here. |
 | `agora` | The working branch and repo default. `@agora-sdk/*` scope + the Agora changes. All work and PRs land here. |
 
-**The only things that diverge from upstream — keep edits within these, don't add new fork points (five total):**
+**The only things that diverge from upstream — keep edits within these, don't add new fork points (six total):**
 
 1. **Base-URL repoint** (4 files: `core/src/utils/env.ts`, `core/src/config/axios.ts`,
    `core/src/context/chat-context.tsx`, `core/src/hooks/auth/oauthCore.ts` — the OAuth helper
@@ -48,6 +48,13 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
    `core/src/interfaces/EntityListSortByOptions.ts` is widened with `"decay"`, `"gravity"`,
    `"wilson"`, and `"bayesian"` sort options plus `rankParams`/`rankAnchor` passthrough scalars.
    Additive and backward-compatible; the server-side counterpart is the Agora ranking engine.
+6. **`emailRedirectTo` passthrough** (4 files — `core/src/config/runtime.ts`,
+   `store/slices/authThunks.ts`, `hooks/auth/useRequestPasswordReset.ts`,
+   `hooks/auth/useSendVerificationEmail.ts`, each carrying/extending the `Modified from the
+   original @replyke/core source.` header): the three native-auth email requests send an
+   `emailRedirectTo` origin (resolved by `getEmailRedirectTo()`: `AGORA_EMAIL_REDIRECT_TO` env var
+   → `window.location.origin` → omitted) so emailed links return to the originating front-end.
+   Additive; no `ReplykeProvider` prop by design. See SYNCING.md #6.
 
 The auth files (#3) are the likely merge-conflict spots if upstream refactors auth — re-apply by
 hand, preserve upstream's surrounding logic, and keep the headers.
@@ -64,7 +71,8 @@ This is a [pnpm](https://pnpm.io) workspace monorepo (`pnpm-workspace.yaml` glob
 - `pnpm run typecheck` — `tsc --noEmit` at the root (CI runs install → build-all → typecheck on
   pushes/PRs to `agora`)
 
-There is no test suite or linter wired up in this repo.
+`pnpm --filter @agora-sdk/core run test` runs the core vitest suite (jsdom); `pnpm run test` runs
+every package's. There is no linter wired up.
 
 > ⚠️ **Before adding tests or touching the build/packaging, read
 > [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).** The published `@agora-sdk/*` packages are

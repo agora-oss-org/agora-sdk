@@ -54,6 +54,17 @@ The base layer of Agora is its API, served by the [Agora server](https://github.
 
 The SDK points at your Agora server through `getApiBaseUrl()`, which defaults to `http://localhost:4000/v7`. Override it by passing the `baseUrl` prop to `ReplykeProvider` — your app parses its own environment (e.g. `import.meta.env.VITE_API_BASE_URL`) and passes the resolved value in. (The SDK no longer auto-detects env vars itself; see [CHANGELOG.md](CHANGELOG.md).)
 
+For projects on **native auth**, the SDK also sends an `emailRedirectTo` origin with sign-up,
+password-reset, and resend-verification requests so the server's emailed links return the user to
+the front-end they were on — useful when several front-ends share one API. It resolves
+automatically to `window.location.origin` on web; to override it (or on the rare web setup where
+the link origin differs from the serving origin), set the **`AGORA_EMAIL_REDIRECT_TO`** env var
+with your bundler's public prefix — `VITE_AGORA_EMAIL_REDIRECT_TO` (Vite) or
+`REACT_APP_AGORA_EMAIL_REDIRECT_TO` (CRA). When neither resolves (React Native / Expo), the field
+is omitted and the server uses its own `AUTH_EMAIL_LINK_BASE` default. Servers with
+`AUTH_EMAIL_LINK_ALLOWED_ORIGINS` configured reject unknown origins with
+`400 auth/email-redirect-not-allowed` — add the front-end's exact origin to that allowlist.
+
 ### 2. Libraries & SDKs (Developer Tools)
 
 On top of the API, Agora provides official libraries to simplify development - React and React Native (including Expo), with secure token management on native.
@@ -153,7 +164,7 @@ The bundled skill gives an agent:
 
 - the **provider → scope → hooks** mental model that unlocks ~150 hooks;
 - focused references for **auth, feeds & ranking, the comment + reaction core, chat, and spaces**;
-- the four **fork divergences** from upstream Replyke — the `@agora-sdk/*` scope, the injected `baseUrl` prop, the `SignUpResult` signup flow, and the extra feed-ranking modes (`decay` / `gravity` / `wilson` / `bayesian`).
+- the six **fork divergences** from upstream Replyke — the `@agora-sdk/*` scope, the injected `baseUrl` prop, the `SignUpResult` signup flow, the entity `include` passthrough, the extra feed-ranking modes (`decay` / `gravity` / `wilson` / `bayesian`), and the `emailRedirectTo` email-link origin (auto-detected on web, `AGORA_EMAIL_REDIRECT_TO` env-var override).
 
 It resolves API details from a bundled API-surface index and your own installed `.d.ts`, so it works **with no extra MCP server and no network access**.
 

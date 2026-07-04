@@ -14,7 +14,7 @@ upstream's improvements painless.
 | **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
-## What diverges from upstream (five things)
+## What diverges from upstream (six things)
 
 1. **Base-URL repoint** — committed code on `agora`, 4 files:
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
@@ -81,6 +81,23 @@ upstream's improvements painless.
      gained optional pass-through scalars `rankParams` (JSON string of numeric tunables),
      `rankAnchor` (pins the decay clock across paginated requests), and `rerank` (opt into the
      server's re-rank webhook). Additive and backward-compatible. The server-side counterpart is
+     documented in the Agora server's `docs/MANIFEST.md`.
+6. **`emailRedirectTo` on native-auth email requests** — hand edits in 4 files;
+   `useRequestPasswordReset.ts` and `useSendVerificationEmail.ts` newly carry the
+   `Modified from the original @replyke/core source.` header, `runtime.ts` and `authThunks.ts`
+   already had one (extended):
+   - `core/src/config/runtime.ts`: new `getEmailRedirectTo()` — resolves the
+     `AGORA_EMAIL_REDIRECT_TO` env var (via `getEnvVar`, so `VITE_`/`REACT_APP_` prefixed) →
+     `window.location.origin` → `undefined`.
+   - `core/src/store/slices/authThunks.ts` (sign-up, both JSON and FormData bodies),
+     `core/src/hooks/auth/useRequestPasswordReset.ts`, and
+     `core/src/hooks/auth/useSendVerificationEmail.ts`: each sends `emailRedirectTo` when a value
+     resolves and **omits the field entirely** otherwise, so the server falls back to its
+     `AUTH_EMAIL_LINK_BASE`. Lets each front-end of a multi-front-end deployment get email links
+     (confirmation / password reset) that point back at itself. Additive and backward-compatible —
+     old servers ignore the field. Deliberately **no** `ReplykeProvider` prop, to keep the provider
+     files clean for upstream merges; the server-side counterpart (validation against
+     `AUTH_EMAIL_LINK_ALLOWED_ORIGINS`, `400 auth/email-redirect-not-allowed` on mismatch) is
      documented in the Agora server's `docs/MANIFEST.md`.
 
 ### Previously diverged, now dissolved into upstream

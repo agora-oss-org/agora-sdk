@@ -11,6 +11,17 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Added
+- **`emailRedirectTo` on native-auth email requests** (divergence #6 — see SYNCING.md). Sign-up,
+  request-password-reset, and send-verification-email now include an `emailRedirectTo` origin so the
+  server's emailed links return the user to the front-end that initiated the request
+  (multi-front-end deployments). Resolved lazily per request by `getEmailRedirectTo()` in
+  `core/src/config/runtime.ts`: `AGORA_EMAIL_REDIRECT_TO` env var (`VITE_`-/`REACT_APP_`-prefixed)
+  → `window.location.origin` → omitted (server falls back to its `AUTH_EMAIL_LINK_BASE`). RN/Expo
+  have no `window`, so they omit the field and get the server default. Requires no server upgrade;
+  servers with `AUTH_EMAIL_LINK_ALLOWED_ORIGINS` configured validate the origin and reject unknown
+  ones with `400 auth/email-redirect-not-allowed`.
+
 ### Changed
 - **`publish.yml` now also creates the GitHub Release for each pushed `v*` tag.** After publishing to
   npm, the workflow extracts the matching `CHANGELOG.md` section as the release notes (appending a
