@@ -15,7 +15,10 @@ export {
   getEnvVar,
 } from "./utils/env";
 // Runtime API base URL (set via <ReplykeProvider baseUrl>, read lazily per request).
-export { getApiBaseUrl, getSocketUrl } from "./config/runtime";
+// getEmailRedirectTo is public so cross-package consumers (e.g. @agora-sdk/auth-react-js) can reuse
+// the same resolution chain sign-up/reset-request/verification-email use internally, instead of
+// each caller re-deriving the origin its own way.
+export { getApiBaseUrl, getSocketUrl, getEmailRedirectTo } from "./config/runtime";
 
 // Constants
 export { reportReasons } from "./constants/reportReasons";

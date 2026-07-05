@@ -52,7 +52,7 @@ You can think of Agora as having two core layers:
 
 The base layer of Agora is its API, served by the [Agora server](https://github.com/jenova-marie/agora). Everything the system can do, you can do through the API - whether it's posting a comment, reporting content, creating a new entity, or updating a user profile. As long as you're authenticated for routes that require authentication, all functionality is accessible.
 
-The SDK points at your Agora server through `getApiBaseUrl()`, which defaults to `http://localhost:4000/v7`. Override it by passing the `baseUrl` prop to `ReplykeProvider` — your app parses its own environment (e.g. `import.meta.env.VITE_API_BASE_URL`) and passes the resolved value in. (The SDK no longer auto-detects env vars itself; see [CHANGELOG.md](CHANGELOG.md).)
+The SDK points at your Agora server through `getApiBaseUrl()`, which defaults to `http://localhost:4000/v7`. Override it by passing the `baseUrl` prop to `AgoraProvider` — your app parses its own environment (e.g. `import.meta.env.VITE_API_BASE_URL`) and passes the resolved value in. (The SDK no longer auto-detects env vars itself; see [CHANGELOG.md](CHANGELOG.md).)
 
 For projects on **native auth**, the SDK also sends an `emailRedirectTo` origin with sign-up,
 password-reset, and resend-verification requests so the server's emailed links return the user to
@@ -88,7 +88,7 @@ This is a minimal example for fetching and rendering an entity (a post, article,
 
 To use this example:
 
-1. Pass your Agora server's base URL to `ReplykeProvider` via the `baseUrl` prop (defaults to `http://localhost:4000/v7` if omitted). Read it from your own env, e.g. `import.meta.env.VITE_API_BASE_URL`.
+1. Pass your Agora server's base URL to `AgoraProvider` via the `baseUrl` prop (defaults to `http://localhost:4000/v7` if omitted). Read it from your own env, e.g. `import.meta.env.VITE_API_BASE_URL`.
 2. Provide a `projectId` and a signed token for your user. The `useSignTestingJwt` helper signs a JWT locally for development.
 
 ```bash
@@ -101,7 +101,7 @@ pnpm add @agora-sdk/react-js
 
 ```tsx
 import {
-  ReplykeProvider,
+  AgoraProvider,
   EntityProvider,
   useEntity,
   useSignTestingJwt,
@@ -143,18 +143,18 @@ function App() {
   }, []);
 
   return (
-    <ReplykeProvider projectId={PROJECT_ID} baseUrl={BASE_URL} signedToken={signedToken}>
+    <AgoraProvider projectId={PROJECT_ID} baseUrl={BASE_URL} signedToken={signedToken}>
       <EntityProvider foreignId={DUMMY_POST_ID} createIfNotFound>
         <Post />
       </EntityProvider>
-    </ReplykeProvider>
+    </AgoraProvider>
   );
 }
 
 export default App;
 ```
 
-> Note: the provider and hook names retain their upstream `Replyke*` identifiers in code; only the package scope is rebranded to `@agora-sdk/*`. UI components (e.g. a prebuilt comment section) are not part of this SDK fork - it ships the headless API and hooks layer.
+> Note: the public API is exposed under `Agora*` aliases (`AgoraProvider`, `AgoraIntegrationProvider`, `AgoraState`, `useAgoraSelector`, `useAgoraDispatch`). These are thin re-exports — internally the code keeps the upstream `Replyke*` identifiers (also still exported, for back-compat) so upstream merges stay cheap. Use whichever you like. UI components (e.g. a prebuilt comment section) are not part of this SDK fork - it ships the headless API and hooks layer.
 
 ## 🤖 Claude Code Skills
 
@@ -164,7 +164,7 @@ The bundled skill gives an agent:
 
 - the **provider → scope → hooks** mental model that unlocks ~150 hooks;
 - focused references for **auth, feeds & ranking, the comment + reaction core, chat, and spaces**;
-- the six **fork divergences** from upstream Replyke — the `@agora-sdk/*` scope, the injected `baseUrl` prop, the `SignUpResult` signup flow, the entity `include` passthrough, the extra feed-ranking modes (`decay` / `gravity` / `wilson` / `bayesian`), and the `emailRedirectTo` email-link origin (auto-detected on web, `AGORA_EMAIL_REDIRECT_TO` env-var override).
+- the seven **fork divergences** from upstream Replyke — the `@agora-sdk/*` scope, the injected `baseUrl` prop, the `SignUpResult` signup flow, the entity `include` passthrough, the extra feed-ranking modes (`decay` / `gravity` / `wilson` / `bayesian`), the `emailRedirectTo` email-link origin (auto-detected on web, `AGORA_EMAIL_REDIRECT_TO` env-var override), and the `Agora*` public-API aliases.
 
 It resolves API details from a bundled API-surface index and your own installed `.d.ts`, so it works **with no extra MCP server and no network access**.
 

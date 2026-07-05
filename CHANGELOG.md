@@ -11,6 +11,16 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-07-04
+
+### Added
+- **`getEmailRedirectTo` is now a public `@agora-sdk/core` export** (alongside its `config/runtime`
+  neighbors `getApiBaseUrl`/`getSocketUrl`). Previously internal-only (reached via relative import by
+  `authThunks.ts`/`useRequestPasswordReset.ts`/`useSendVerificationEmail.ts`, all inside core itself);
+  cross-package consumers like `@agora-sdk/auth-react-js` had no way to reuse the same
+  env-var-then-`window.location.origin` resolution chain and were re-deriving the origin themselves
+  (drifting out of sync — see `agora-sdk-plus` divergence fixing `useResendVerification`).
+
 ## [1.6.0] - 2026-07-04
 
 ### Added
