@@ -4,6 +4,7 @@ import {
   Space,
   ReadingPermission,
   PostingPermission,
+  SpaceVisibility,
 } from "../../interfaces/models/Space";
 import { UploadImageOptions } from "../../interfaces/models/Image";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
@@ -22,6 +23,7 @@ export interface CreateSpaceProps {
   banner?: ImageUploadConfig;
   readingPermission?: ReadingPermission;
   postingPermission?: PostingPermission;
+  visibility?: SpaceVisibility;
   requireJoinApproval?: boolean;
   metadata?: Record<string, any>;
   parentSpaceId?: string | null;
@@ -61,6 +63,9 @@ function useCreateSpace(): (props: CreateSpaceProps) => Promise<Space> {
         if (props.postingPermission) {
           formData.append("postingPermission", props.postingPermission);
         }
+        if (props.visibility) {
+          formData.append("visibility", props.visibility);
+        }
         if (props.requireJoinApproval !== undefined) {
           formData.append("requireJoinApproval", String(props.requireJoinApproval));
         }
@@ -96,6 +101,7 @@ function useCreateSpace(): (props: CreateSpaceProps) => Promise<Space> {
           description: props.description,
           readingPermission: props.readingPermission,
           postingPermission: props.postingPermission,
+          visibility: props.visibility,
           requireJoinApproval: props.requireJoinApproval,
           metadata: props.metadata,
           parentSpaceId: props.parentSpaceId,

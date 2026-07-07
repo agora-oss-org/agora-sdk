@@ -4,6 +4,7 @@ import {
   SpaceDetailed,
   ReadingPermission,
   PostingPermission,
+  SpaceVisibility,
 } from "../../interfaces/models/Space";
 import { UploadImageOptions } from "../../interfaces/models/Image";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
@@ -25,6 +26,7 @@ export interface UpdateSpaceProps {
     banner: ImageUploadConfig;
     readingPermission: ReadingPermission;
     postingPermission: PostingPermission;
+    visibility: SpaceVisibility;
     requireJoinApproval: boolean;
     metadata: Record<string, any>;
   }>;
@@ -66,6 +68,9 @@ function useUpdateSpace(): (props: UpdateSpaceProps) => Promise<SpaceDetailed> {
         }
         if (update.postingPermission !== undefined) {
           formData.append("postingPermission", update.postingPermission);
+        }
+        if (update.visibility !== undefined) {
+          formData.append("visibility", update.visibility);
         }
         if (update.requireJoinApproval !== undefined) {
           formData.append(

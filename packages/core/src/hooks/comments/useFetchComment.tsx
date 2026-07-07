@@ -2,24 +2,19 @@ import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import { Comment, CommentIncludeParam } from "../../interfaces/models/Comment";
 import axios from "../../config/axios";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchCommentProps {
+export interface FetchCommentProps extends SpaceReputationContextParams {
   commentId: string;
   include?: CommentIncludeParam;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchComment(): (props: FetchCommentProps) => Promise<{ comment: Comment }> {
   const { projectId } = useProject();
 
   const fetchComment = useCallback(
-    async ({ commentId, include, spaceReputationId, spaceReputationDescendants }: FetchCommentProps) => {
+    async ({ commentId, include, spaceReputation, spaceReputationId, spaceReputationDescendants }: FetchCommentProps) => {
       if (!projectId) {
         throw new Error("No project specified");
       }
@@ -28,13 +23,17 @@ function useFetchComment(): (props: FetchCommentProps) => Promise<{ comment: Com
         throw new Error("No comment ID passed");
       }
 
-      const params: Record<string, any> = {};
+      const params: Record<string, any> = {
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
+      };
 
       if (include) {
         params.include = Array.isArray(include) ? include.join(',') : include;
       }
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       const response = await axios.get(`/${projectId}/comments/${commentId}`, {
         params,

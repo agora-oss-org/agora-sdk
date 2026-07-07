@@ -4,8 +4,9 @@ import useProject from "../../projects/useProject";
 import { useUser } from "../../user";
 import { EstablishedConnection } from "../../../interfaces/models/Connection";
 import { PaginatedResponse } from "../../../interfaces/PaginatedResponse";
+import { UserSearchParams } from "../../../interfaces/UserSearch";
 
-export interface FetchConnectionsParams {
+export interface FetchConnectionsParams extends UserSearchParams {
   page?: number;
   limit?: number;
 }
@@ -19,7 +20,7 @@ function useFetchConnections(): (props?: FetchConnectionsParams) => Promise<Pagi
     async (
       props: FetchConnectionsParams = {}
     ): Promise<PaginatedResponse<EstablishedConnection>> => {
-      const { page = 1, limit = 20 } = props;
+      const { page = 1, limit = 20, query, searchFields } = props;
       if (!projectId) {
         throw new Error("No project specified");
       }
@@ -34,6 +35,8 @@ function useFetchConnections(): (props?: FetchConnectionsParams) => Promise<Pagi
           params: {
             page,
             limit,
+            query,
+            searchFields,
           },
         }
       );

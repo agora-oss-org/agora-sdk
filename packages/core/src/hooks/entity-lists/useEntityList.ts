@@ -175,6 +175,9 @@ function useEntityList({
           spaceId: configWithDefaults.spaceId,
           limit: configWithDefaults.limit,
           include: configWithDefaults.include,
+          // Object form (primary) + deprecated flat props; flattened downstream
+          // by useEntityListActions before reaching the serializer.
+          spaceReputation: configWithDefaults.spaceReputation,
           spaceReputationId: configWithDefaults.spaceReputationId,
           spaceReputationDescendants: configWithDefaults.spaceReputationDescendants,
         };
@@ -261,6 +264,7 @@ function useEntityList({
             sourceId: currentConfig.sourceId,
             spaceId: currentConfig.spaceId,
             include: currentConfig.include,
+            spaceReputation: currentConfig.spaceReputation,
             spaceReputationId: currentConfig.spaceReputationId,
             spaceReputationDescendants: currentConfig.spaceReputationDescendants,
           });

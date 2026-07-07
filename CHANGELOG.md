@@ -11,6 +11,30 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Added
+- **Synced upstream feature work through v7.8.2** (`@sublay/* → @agora-sdk/*` and `Sublay*` →
+  `Replyke*` identifiers via `rename-to-agora.sh`). New capabilities in `@agora-sdk/*`:
+  **notification preferences** (`useNotificationPreferences` + `notificationPreferencesApi`, with the
+  `PushEventType` interface) and **conversation muting** (`useMuteConversation` + the `MuteDuration`
+  interface and new `ConversationMember` mute fields) rounding out the push bundle; **space
+  visibility** exposed on `useCreateSpace`/`useUpdateSpace` (and the `Space` model + `spacesApi`);
+  **user matching** search (`useMatchUsers` + `UserSearch` interface); and a **space-reputation
+  parameter consolidation** — upstream extracted a shared `SpaceReputationContextParams` /
+  `buildSpaceReputationParams` (now re-exported from `@agora-sdk/core`) and threaded a unified
+  `spaceReputation` object through every fetch hook (entities, comments, reactions, relationships,
+  users, chat, `useAskContent`/`useSearchContent`), deprecating the flat
+  `spaceReputationId`/`spaceReputationDescendants` scalars (still honored, with a one-time warning).
+  `useAskContent` also gained upstream's `reactNative.textStreaming` fetch init for incremental
+  streaming on RN.
+
+### Changed
+- **Two merge conflicts resolved, both keeping our divergence + taking upstream's improvement**
+  (no fixture adaptation was needed this sync — all 1069 core tests pass):
+  `core/src/hooks/search/useAskContent.ts` — kept the base-URL divergence (`getApiBaseUrl()` at call
+  time, divergence #1) while adopting upstream's new `init` object with `reactNative.textStreaming`;
+  `core/src/index.ts` — kept both new export blocks side by side (our `config/runtime` re-exports and
+  upstream's `buildSpaceReputationParams`). See SYNCING.md.
+
 ## [1.7.0] - 2026-07-04
 
 ### Added

@@ -5,21 +5,16 @@ import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import { Entity } from "../../interfaces/models/Entity";
 import { Comment } from "../../interfaces/models/Comment";
 import { Space } from "../../interfaces/models/Space";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchModeratedReportsParams {
+export interface FetchModeratedReportsParams extends SpaceReputationContextParams {
   spaceId?: string;
   targetType?: "comment" | "entity";
   status?: "pending" | "on-hold" | "escalated" | "dismissed" | "actioned";
   sortBy?: "new" | "old";
   page?: number;
   limit?: number;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface ReportUserReport {
@@ -82,6 +77,7 @@ function useFetchModeratedReports(): (params: FetchModeratedReportsParams) => Pr
       sortBy,
       page,
       limit,
+      spaceReputation,
       spaceReputationId,
       spaceReputationDescendants,
     }: FetchModeratedReportsParams) => {
@@ -89,9 +85,19 @@ function useFetchModeratedReports(): (params: FetchModeratedReportsParams) => Pr
         throw new Error("No projectId available.");
       }
 
-      const params: Record<string, any> = { spaceId, targetType, status, sortBy, page, limit };
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
+      const params: Record<string, any> = {
+        spaceId,
+        targetType,
+        status,
+        sortBy,
+        page,
+        limit,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
+      };
 
       const response = await axios.get<PaginatedResponse<Report>>(
         `/${projectId}/reports/moderated`,

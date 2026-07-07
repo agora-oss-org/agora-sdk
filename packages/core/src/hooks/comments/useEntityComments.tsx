@@ -7,21 +7,15 @@ import { EntityCommentsTree } from "../../interfaces/EntityCommentsTree";
 import { addCommentsToTree as addCommentsToTreeHandler } from "../../helpers/addCommentsToTree";
 import { removeCommentFromTree as removeCommentFromTreeHandler } from "../../helpers/removeCommentFromTree";
 import { markCommentAsDeletedInTree as markCommentAsDeletedInTreeHandler } from "../../helpers/markCommentAsDeletedInTree";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface UseEntityCommentsProps {
+export interface UseEntityCommentsProps extends SpaceReputationContextParams {
   entityId: string | undefined | null;
   limit?: number;
   defaultSortBy?: CommentsSortByOptions;
   /** Initial sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
   defaultSortDir?: "asc" | "desc";
   include?: CommentIncludeParam;
-  /**
-   * Opt into per-row `spaceReputation` on embedded comment authors. Accepted
-   * forms: a space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseEntityCommentsValues {
@@ -53,9 +47,15 @@ function useEntityComments(
     defaultSortBy = "createdAt",
     defaultSortDir = "desc",
     include,
+    spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
   } = props;
+
+  // Forwarded to the leaf fetcher, which flattens it via
+  // buildSpaceReputationParams before it reaches the serializer.
+  const reputation = { spaceReputation, spaceReputationId, spaceReputationDescendants };
+  const reputationKey = JSON.stringify(reputation);
 
   const fetchManyComments = useFetchManyComments();
 
@@ -139,8 +139,7 @@ function useEntityComments(
         sortDir,
         limit,
         include,
-        spaceReputationId,
-        spaceReputationDescendants,
+        ...reputation,
       });
 
       if (response) {
@@ -155,7 +154,7 @@ function useEntityComments(
       loading.current = false;
       setLoadingState(false);
     }
-  }, [fetchManyComments, limit, sortBy, sortDir, entityId, include, spaceReputationId, spaceReputationDescendants]);
+  }, [fetchManyComments, limit, sortBy, sortDir, entityId, include, reputationKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = () => {
     if (loading.current || !hasMore.current) return;
@@ -185,8 +184,7 @@ function useEntityComments(
           sortBy,
           sortDir,
           limit,
-          spaceReputationId,
-          spaceReputationDescendants,
+          ...reputation,
         });
 
         if (response) {

@@ -36,3 +36,9 @@ export type {
   UseConversationMembersProps,
   UseConversationMembersValues,
 } from "./useConversationMembers";
+
+export { default as useMuteConversation } from "./useMuteConversation";
+export type {
+  MuteConversationProps,
+  UseMuteConversationValues,
+} from "./useMuteConversation";

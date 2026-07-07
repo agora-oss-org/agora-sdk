@@ -4,8 +4,10 @@ import { Comment, CommentIncludeParam } from "../../interfaces/models/Comment";
 import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import useProject from "../projects/useProject";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchManyCommentsProps {
+export interface FetchManyCommentsProps extends SpaceReputationContextParams {
   entityId?: string | null | undefined;
   userId?: string | null | undefined;
   parentId?: string | null | undefined;
@@ -16,13 +18,6 @@ export interface FetchManyCommentsProps {
   limit?: number;
   include?: CommentIncludeParam;
   sourceId?: string | null | undefined;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<PaginatedResponse<Comment>> {
@@ -41,6 +36,7 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
         limit,
         include,
         sourceId,
+        spaceReputation,
         spaceReputationId,
         spaceReputationDescendants,
       } = props;
@@ -61,6 +57,11 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
         sortBy,
         page,
         limit,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
       };
 
       if (sortDir) params.sortDir = sortDir;
@@ -68,8 +69,6 @@ function useFetchManyComments(): (props: FetchManyCommentsProps) => Promise<Pagi
       if (userId) params.userId = userId;
       if (parentId) params.parentId = parentId;
       if (sourceId) params.sourceId = sourceId;
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       if (include) {
         params.include = Array.isArray(include) ? include.join(',') : include;

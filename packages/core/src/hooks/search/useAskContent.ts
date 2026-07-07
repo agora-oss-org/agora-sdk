@@ -8,21 +8,21 @@ import { useReplykeSelector } from "../../store/hooks";
 import { selectAccessToken } from "../../store/slices/authSlice";
 import { getApiBaseUrl } from "../../config/runtime";
 import { ContentSearchResult } from "./useSearchContent";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface UseAskContentProps {
+export interface UseAskContentProps extends SpaceReputationContextParams {
   query: string;
   sourceTypes?: ("entity" | "comment" | "message")[];
   spaceId?: string;
+  /**
+   * With a `spaceId`, also search every space nested under it (children,
+   * grandchildren — the whole subtree, any depth). Ignored without a `spaceId`.
+   * Defaults to false (exact-space search).
+   */
+  includeChildSpaces?: boolean;
   conversationId?: string;
   limit?: number;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`. Sent as a query param (the server
-   * reads it from the query string, not the request body).
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseAskContentReturn {
@@ -102,7 +102,7 @@ export default function useAskContent(): UseAskContentReturn {
   }, []);
 
   const ask = useCallback(
-    ({ query, sourceTypes, spaceId, conversationId, limit, spaceReputationId, spaceReputationDescendants }: UseAskContentProps) => {
+    ({ query, sourceTypes, spaceId, includeChildSpaces, conversationId, limit, spaceReputation, spaceReputationId, spaceReputationDescendants }: UseAskContentProps) => {
       if (!projectId) return;
       if (!query.trim()) return;
 
@@ -122,6 +122,7 @@ export default function useAskContent(): UseAskContentReturn {
         query,
         ...(sourceTypes && { sourceTypes }),
         ...(spaceId && { spaceId }),
+        ...(includeChildSpaces && { includeChildSpaces }),
         ...(conversationId && { conversationId }),
         ...(limit && { limit }),
       });
@@ -138,22 +139,39 @@ export default function useAskContent(): UseAskContentReturn {
       // spaceReputation opt-in is read from the query string by the server,
       // not the request body — append it to the URL.
       const queryString = (() => {
+        const reputationParams = buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        });
         const sp = new URLSearchParams();
-        if (spaceReputationId !== undefined) sp.set("spaceReputationId", spaceReputationId);
-        if (spaceReputationDescendants !== undefined)
-          sp.set("spaceReputationDescendants", String(spaceReputationDescendants));
+        if (reputationParams.spaceReputationId !== undefined)
+          sp.set("spaceReputationId", reputationParams.spaceReputationId);
+        if (reputationParams.spaceReputationDescendants !== undefined)
+          sp.set(
+            "spaceReputationDescendants",
+            String(reputationParams.spaceReputationDescendants)
+          );
         const s = sp.toString();
         return s ? `?${s}` : "";
       })();
 
+      // `reactNative.textStreaming` opts react-native-fetch-api into incremental
+      // streaming, so `response.body` is a progressively-readable stream rather
+      // than a buffered blob resolved only at completion. It's an unknown key to
+      // standard/web `fetch`, which ignores extra RequestInit fields, so we send
+      // it unconditionally instead of branching on platform.
+      const init: RequestInit & { reactNative?: { textStreaming?: boolean } } = {
+        method: "POST",
+        headers,
+        body,
+        signal: controller.signal,
+        reactNative: { textStreaming: true },
+      };
+
       (async () => {
         try {
-          const response = await fetch(`${getApiBaseUrl()}/${projectId}/search/ask${queryString}`, {
-            method: "POST",
-            headers,
-            body,
-            signal: controller.signal,
-          });
+          const response = await fetch(`${getApiBaseUrl()}/${projectId}/search/ask${queryString}`, init);
 
           if (!response.ok) {
             const text = await response.text().catch(() => "");
@@ -172,8 +190,12 @@ export default function useAskContent(): UseAskContentReturn {
           if (!response.body) {
             setError(
               "Streaming is not supported in this environment. " +
-              "In React Native, install react-native-fetch-api, web-streams-polyfill, and react-native-polyfill-globals, " +
-              "then call polyfillGlobals() at app startup."
+              "In React Native, install react-native-fetch-api, web-streams-polyfill@^3, " +
+              "react-native-polyfill-globals, and text-encoding, then at app startup call the " +
+              "targeted sub-polyfills — polyfill() from react-native-polyfill-globals/src/encoding, " +
+              "/readable-stream, and /fetch (in that order). " +
+              "Prefer these over the all-in-one polyfillGlobals(), which also pulls the native " +
+              "react-native-get-random-values and forces a dev-client rebuild."
             );
             setLoading(false);
             return;

@@ -3,20 +3,15 @@ import { Reaction, ReactionType } from "../../interfaces/models/Reaction";
 import { PaginatedResponse } from "../../interfaces/PaginatedResponse";
 import useProject from "../projects/useProject";
 import axios from "../../config/axios";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchCommentReactionsProps {
+export interface FetchCommentReactionsProps extends SpaceReputationContextParams {
   commentId: string;
   page: number;
   limit?: number;
   reactionType?: ReactionType;
   sortDir?: "asc" | "desc";
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchCommentReactions(): (props: FetchCommentReactionsProps) => Promise<PaginatedResponse<Reaction>> {
@@ -24,7 +19,7 @@ function useFetchCommentReactions(): (props: FetchCommentReactionsProps) => Prom
 
   const fetchCommentReactions = useCallback(
     async (props: FetchCommentReactionsProps): Promise<PaginatedResponse<Reaction>> => {
-      const { commentId, page, limit = 20, reactionType, sortDir = "desc", spaceReputationId, spaceReputationDescendants } = props;
+      const { commentId, page, limit = 20, reactionType, sortDir = "desc", spaceReputation, spaceReputationId, spaceReputationDescendants } = props;
 
       if (page === 0) {
         throw new Error("Can't fetch reactions with page 0");
@@ -46,13 +41,16 @@ function useFetchCommentReactions(): (props: FetchCommentReactionsProps) => Prom
         page,
         limit,
         sortDir,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
       };
 
       if (reactionType) {
         params.reactionType = reactionType;
       }
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       const response = await axios.get<PaginatedResponse<Reaction>>(
         `/${projectId}/comments/${commentId}/reactions`,

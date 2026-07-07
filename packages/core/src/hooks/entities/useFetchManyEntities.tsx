@@ -11,6 +11,8 @@ import { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import { LocationFilters } from "../../interfaces/entity-filters/LocationFilters";
 import { MetadataFilters } from "../../interfaces/entity-filters/MetadataFilters";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
 // Helper to serialize objects into bracket notation for query params
 const serializeObject = (obj: any, prefix: string): Record<string, any> => {
@@ -46,7 +48,7 @@ const serializeObject = (obj: any, prefix: string): Record<string, any> => {
   return params;
 };
 
-interface FetchManyEntitiesParams {
+interface FetchManyEntitiesParams extends SpaceReputationContextParams {
   page?: number;
   limit?: number;
   sortBy?: EntityListSortByOptions;
@@ -65,13 +67,6 @@ interface FetchManyEntitiesParams {
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
   include?: EntityIncludeParam;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchManyEntities(): (params?: FetchManyEntitiesParams) => Promise<PaginatedResponse<Entity>> {
@@ -97,8 +92,14 @@ function useFetchManyEntities(): (params?: FetchManyEntitiesParams) => Promise<P
       if (params?.spaceId) queryParams.spaceId = params.spaceId;
       if (params?.userId) queryParams.userId = params.userId;
       if (params?.followedOnly !== undefined) queryParams.followedOnly = params.followedOnly;
-      if (params?.spaceReputationId !== undefined) queryParams.spaceReputationId = params.spaceReputationId;
-      if (params?.spaceReputationDescendants !== undefined) queryParams.spaceReputationDescendants = params.spaceReputationDescendants;
+      Object.assign(
+        queryParams,
+        buildSpaceReputationParams({
+          spaceReputation: params?.spaceReputation,
+          spaceReputationId: params?.spaceReputationId,
+          spaceReputationDescendants: params?.spaceReputationDescendants,
+        })
+      );
 
       if (params?.include) {
         queryParams.include = Array.isArray(params.include)

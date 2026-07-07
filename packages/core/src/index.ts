@@ -19,6 +19,11 @@ export {
 // the same resolution chain sign-up/reset-request/verification-email use internally, instead of
 // each caller re-deriving the origin its own way.
 export { getApiBaseUrl, getSocketUrl, getEmailRedirectTo } from "./config/runtime";
+export {
+  buildSpaceReputationParams,
+  type BuildSpaceReputationParamsInput,
+  type SpaceReputationFlatParams,
+} from "./utils/spaceReputationParams";
 
 // Constants
 export { reportReasons } from "./constants/reportReasons";
@@ -149,7 +154,9 @@ export {
 // -- push notifications
 export {
   usePushRegistration,
+  useNotificationPreferences,
   type UsePushRegistrationValues,
+  type UseNotificationPreferencesValues,
 } from "./hooks/push";
 export type {
   PushTokenAdapter,
@@ -158,6 +165,12 @@ export type {
   PushDevicePlatform,
   PushWebSubscriptionPayload,
 } from "./interfaces/PushTokenAdapter";
+export { PUSH_EVENT_TYPES, type PushEventType } from "./interfaces/PushEventType";
+export { MUTE_DURATIONS, type MuteDuration } from "./interfaces/MuteDuration";
+export type {
+  NotificationPreferencesResponse,
+  MuteConversationResponse,
+} from "./store/api/notificationPreferencesApi";
 
 // -- collections
 export {
@@ -520,6 +533,7 @@ export {
   useSearchUsers,
   useSearchSpaces,
   useAskContent,
+  useMatchUsers,
   type UseSearchContentProps,
   type UseSearchContentReturn,
   type ContentSearchResult,
@@ -531,6 +545,12 @@ export {
   type SpaceSearchResult,
   type UseAskContentProps,
   type UseAskContentReturn,
+  type UseMatchUsersProps,
+  type UseMatchUsersReturn,
+  type UserMatchResult,
+  type MatchedFacet,
+  type MatchFacetRef,
+  type SampleContent,
 } from "./hooks/search";
 
 // -- storage
@@ -634,6 +654,13 @@ export type {
 } from "./interfaces/SpaceListSortByOptions";
 export type { SpaceBreadcrumb } from "./interfaces/SpaceBreadcrumb";
 export type {
+  SpaceReputationContextParams,
+  SpaceReputationUserParams,
+  SpaceReputationContextObject,
+  SpaceReputationUserObject,
+} from "./interfaces/SpaceReputation";
+export type { UserSearchParams } from "./interfaces/UserSearch";
+export type {
   Rule,
   FetchManyRulesResponse,
   DeleteRuleResponse,
@@ -681,6 +708,7 @@ export {
   useCreateDirectConversation,
   useFetchSpaceConversation,
   useConversationMembers,
+  useMuteConversation,
   useLiveChatMessages,
   useChatMessages,
   useFetchManyChatMessages,
@@ -712,6 +740,8 @@ export type {
   UseFetchSpaceConversationValues,
   UseConversationMembersProps,
   UseConversationMembersValues,
+  MuteConversationProps,
+  UseMuteConversationValues,
   UseLiveChatMessagesProps,
   UseLiveChatMessagesValues,
   UseChatMessagesProps,

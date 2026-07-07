@@ -55,6 +55,63 @@ describe("useFetchManyEntitiesWrapper", () => {
     expect(calls[1].config?.params).toMatchObject({ page: 2 });
   });
 
+  it("forwards the spaceReputation OBJECT form as flat params on BOTH page 1 and load-more", async () => {
+    // Regression guard: the load-more path previously forwarded only the
+    // deprecated flat props and dropped the new `spaceReputation` object, so a
+    // caller on the object form got correct reputation on page 1 then a silent
+    // no-op on every load-more page. Exercise the real load-more flow and assert
+    // page 2 carries the same flat `spaceReputationId`/`spaceReputationDescendants`
+    // the object flattens to — never dropped, never bracketed.
+    const firstEntity = makeEntity({ id: "entity-1" });
+    const secondEntity = makeEntity({ id: "entity-2" });
+
+    const { result, axiosPrivate } = renderHookWithAxios(
+      () =>
+        useFetchManyEntitiesWrapper({
+          spaceReputation: { spaceId: "space-7", includeDescendants: true },
+        }),
+      {
+        beforeRender: ({ axiosPrivate }) =>
+          axiosPrivate.mockResponse("get", makePage([firstEntity], true)),
+      },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    axiosPrivate.mockResponse("get", makePage([secondEntity], false));
+
+    act(() => {
+      result.current.loadMore();
+    });
+
+    await waitFor(() => expect(result.current.hasMore).toBe(false));
+
+    const calls = axiosPrivate.calls("get");
+    expect(calls).toHaveLength(2);
+
+    const expectFlatReputation = (params: Record<string, unknown> | undefined) => {
+      expect(params).toMatchObject({
+        spaceReputationId: "space-7",
+        spaceReputationDescendants: true,
+      });
+      // The object must NOT survive into the serialized params (bracket-leak /
+      // `[object Object]` would silently no-op on the server).
+      expect(params).not.toHaveProperty("spaceReputation");
+      const qs = new URLSearchParams(
+        Object.entries(params ?? {}).map(([k, v]) => [k, String(v)]),
+      ).toString();
+      expect(qs).toContain("spaceReputationId=space-7");
+      expect(qs).not.toContain("spaceReputation%5B");
+      expect(qs).not.toContain("spaceReputation[");
+    };
+
+    // Page 1 (reset path) and page 2 (load-more path) must be identical.
+    expect(calls[0].config?.params).toMatchObject({ page: 1 });
+    expectFlatReputation(calls[0].config?.params as Record<string, unknown>);
+    expect(calls[1].config?.params).toMatchObject({ page: 2 });
+    expectFlatReputation(calls[1].config?.params as Record<string, unknown>);
+  });
+
   it("resets to page 1 and refetches when the sort options change", async () => {
     const { result, axiosPrivate } = renderHookWithAxios(
       () => useFetchManyEntitiesWrapper({}),

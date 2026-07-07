@@ -2,17 +2,12 @@ import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import { Entity, EntityIncludeParam } from "../../interfaces/models/Entity";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchEntityProps {
+export interface FetchEntityProps extends SpaceReputationContextParams {
   entityId: string;
   include?: EntityIncludeParam;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchEntity(): (props: FetchEntityProps) => Promise<Entity> {
@@ -20,7 +15,7 @@ function useFetchEntity(): (props: FetchEntityProps) => Promise<Entity> {
   const { projectId } = useProject();
 
   const fetchEntity = useCallback(
-    async ({ entityId, include, spaceReputationId, spaceReputationDescendants }: FetchEntityProps) => {
+    async ({ entityId, include, spaceReputation, spaceReputationId, spaceReputationDescendants }: FetchEntityProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -31,10 +26,12 @@ function useFetchEntity(): (props: FetchEntityProps) => Promise<Entity> {
 
       const params: Record<string, any> = {
         include: Array.isArray(include) ? include.join(",") : include,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
       };
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined)
-        params.spaceReputationDescendants = spaceReputationDescendants;
 
       const response = await axios.get(`/${projectId}/entities/${entityId}`, {
         params,

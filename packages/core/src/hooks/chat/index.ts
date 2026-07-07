@@ -9,6 +9,7 @@ export {
   useCreateDirectConversation,
   useFetchSpaceConversation,
   useConversationMembers,
+  useMuteConversation,
 } from "./conversations";
 export type {
   UseConversationsProps,
@@ -24,6 +25,8 @@ export type {
   UseFetchSpaceConversationValues,
   UseConversationMembersProps,
   UseConversationMembersValues,
+  MuteConversationProps,
+  UseMuteConversationValues,
 } from "./conversations";
 
 // Message hooks

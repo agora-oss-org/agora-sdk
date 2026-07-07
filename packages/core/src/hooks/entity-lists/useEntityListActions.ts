@@ -24,6 +24,8 @@ import type { TitleFilters } from "../../interfaces/entity-filters/TitleFilters"
 import type { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import type { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import type { KeywordsFilters } from "../../interfaces/entity-filters/KeywordsFilters";
+import type { SpaceReputationContextObject } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
 interface FetchEntitiesOptions {
   page: number;
@@ -50,7 +52,14 @@ interface FetchEntitiesOptions {
   spaceId?: string | null;
   limit: number;
   include?: EntityIncludeParam | null;
+  /**
+   * Primary form. Flattened to `spaceReputationId`/`spaceReputationDescendants`
+   * before it reaches the serializer.
+   */
+  spaceReputation?: SpaceReputationContextObject;
+  /** @deprecated Use `spaceReputation` instead. */
   spaceReputationId?: string | null;
+  /** @deprecated Use `spaceReputation.includeDescendants` instead. */
   spaceReputationDescendants?: boolean | null;
 }
 
@@ -112,6 +121,14 @@ export function useEntityListActions(): UseEntityListActionsValues {
 
       dispatch(setEntityListLoading({ listId, loading: true }));
 
+      // Normalize the reputation params at this input boundary so the
+      // `spaceReputation` object never reaches RTK Query's serializer.
+      const reputationParams = buildSpaceReputationParams({
+        spaceReputation: options.spaceReputation,
+        spaceReputationId: options.spaceReputationId,
+        spaceReputationDescendants: options.spaceReputationDescendants,
+      });
+
       try {
         const result = await triggerFetchEntities({
           projectId,
@@ -133,8 +150,8 @@ export function useEntityListActions(): UseEntityListActionsValues {
           contentFilters: options.contentFilters,
           attachmentsFilters: options.attachmentsFilters,
           include: options.include,
-          spaceReputationId: options.spaceReputationId,
-          spaceReputationDescendants: options.spaceReputationDescendants,
+          spaceReputationId: reputationParams.spaceReputationId,
+          spaceReputationDescendants: reputationParams.spaceReputationDescendants,
         }).unwrap();
 
         if (result) {

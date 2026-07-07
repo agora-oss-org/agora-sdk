@@ -14,6 +14,8 @@ import { TitleFilters } from "../../interfaces/entity-filters/TitleFilters";
 import { ContentFilters } from "../../interfaces/entity-filters/ContentFilters";
 import { AttachmentsFilters } from "../../interfaces/entity-filters/AttachmentsFilters";
 import { KeywordsFilters } from "../../interfaces/entity-filters/KeywordsFilters";
+import { SpaceReputationContextObject } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
 // Individual entity list state
 export interface EntityListState {
@@ -120,11 +122,26 @@ export interface EntityListConfig {
   limit?: number;
   include?: EntityIncludeParam | null;
   /**
+   * Opt the embedded authors into a space-scoped `spaceReputation`. This is the
+   * primary form; it supersedes the deprecated flat props below. Normalized to
+   * the flat `spaceReputationId`/`spaceReputationDescendants` pair before it is
+   * stored in slice state (the persisted shape stays flat).
+   */
+  spaceReputation?: SpaceReputationContextObject;
+  /**
    * Opt into per-row `spaceReputation` on embedded authors. Accepted forms: a
    * space `<uuid>`, `"none"`, or `"context"`.
+   *
+   * @deprecated Use `spaceReputation: { spaceId, includeDescendants? }`
+   * instead. Still accepted; ignored when the `spaceReputation` object is supplied.
    */
   spaceReputationId?: string | null;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
+  /**
+   * Only honored with an explicit `<uuid>` `spaceReputationId`.
+   *
+   * @deprecated Use `spaceReputation.includeDescendants` instead. Still
+   * accepted; ignored when the `spaceReputation` object is supplied.
+   */
   spaceReputationDescendants?: boolean | null;
 }
 
@@ -255,11 +272,25 @@ export const entityListsSlice = createSlice({
         if (config.include !== undefined) {
           list.include = config.include;
         }
-        if (config.spaceReputationId !== undefined) {
-          list.spaceReputationId = config.spaceReputationId;
-        }
-        if (config.spaceReputationDescendants !== undefined) {
-          list.spaceReputationDescendants = config.spaceReputationDescendants;
+        // Normalize the reputation params at this input boundary so the
+        // `spaceReputation` object never reaches the persisted (flat) state or
+        // the serializer. When the object form is supplied it wins; an absent
+        // key inside it clears the corresponding flat field to `null`.
+        if (config.spaceReputation !== undefined) {
+          const flat = buildSpaceReputationParams({
+            spaceReputation: config.spaceReputation,
+          });
+          list.spaceReputationId = flat.spaceReputationId ?? null;
+          list.spaceReputationDescendants =
+            flat.spaceReputationDescendants ?? null;
+        } else {
+          // Flat form (back-compat). `null` stays meaningful ("explicitly cleared").
+          if (config.spaceReputationId !== undefined) {
+            list.spaceReputationId = config.spaceReputationId;
+          }
+          if (config.spaceReputationDescendants !== undefined) {
+            list.spaceReputationDescendants = config.spaceReputationDescendants;
+          }
         }
       }
 

@@ -6,20 +6,15 @@ import {
   SpaceMemberStatus,
 } from "../../interfaces/models/SpaceMember";
 import useAxiosPrivate from "../../config/useAxiosPrivate";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchSpaceMembersProps {
+export interface FetchSpaceMembersProps extends SpaceReputationContextParams {
   spaceId: string;
   page?: number;
   limit?: number;
   role?: SpaceMemberRole;
   status?: SpaceMemberStatus;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchSpaceMembers(): (props: FetchSpaceMembersProps) => Promise<SpaceMembersResponse> {
@@ -27,7 +22,7 @@ function useFetchSpaceMembers(): (props: FetchSpaceMembersProps) => Promise<Spac
   const axios = useAxiosPrivate();
 
   const fetchSpaceMembers = useCallback(
-    async ({ spaceId, page, limit, role, status, spaceReputationId, spaceReputationDescendants }: FetchSpaceMembersProps) => {
+    async ({ spaceId, page, limit, role, status, spaceReputation, spaceReputationId, spaceReputationDescendants }: FetchSpaceMembersProps) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -36,9 +31,17 @@ function useFetchSpaceMembers(): (props: FetchSpaceMembersProps) => Promise<Spac
         throw new Error("Please pass a spaceId");
       }
 
-      const params: Record<string, any> = { page, limit, role, status };
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
+      const params: Record<string, any> = {
+        page,
+        limit,
+        role,
+        status,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
+      };
 
       const response = await axios.get<SpaceMembersResponse>(
         `/${projectId}/spaces/${spaceId}/members`,

@@ -4,6 +4,7 @@ import useProject from "../../projects/useProject";
 import { useUser } from "../../user";
 import type { User } from "../../../interfaces/models/User";
 import { PaginatedResponse } from "../../../interfaces/PaginatedResponse";
+import { UserSearchParams } from "../../../interfaces/UserSearch";
 
 export interface FollowerWithFollowInfo {
   followId: string;
@@ -11,7 +12,7 @@ export interface FollowerWithFollowInfo {
   followedAt: string;
 }
 
-export interface FetchFollowersParams {
+export interface FetchFollowersParams extends UserSearchParams {
   page?: number;
   limit?: number;
 }
@@ -22,7 +23,7 @@ function useFetchFollowers(): (params?: FetchFollowersParams) => Promise<Paginat
   const { user } = useUser();
 
   const fetchFollowers = useCallback(
-    async ({ page = 1, limit = 20 }: FetchFollowersParams = {}) => {
+    async ({ page = 1, limit = 20, query, searchFields }: FetchFollowersParams = {}) => {
       if (!projectId) {
         throw new Error("No projectId available.");
       }
@@ -34,7 +35,7 @@ function useFetchFollowers(): (params?: FetchFollowersParams) => Promise<Paginat
       const response = await axios.get<PaginatedResponse<FollowerWithFollowInfo>>(
         `/${projectId}/follows/followers`,
         {
-          params: { page, limit },
+          params: { page, limit, query, searchFields },
         }
       );
 

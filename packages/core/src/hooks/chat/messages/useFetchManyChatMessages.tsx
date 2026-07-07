@@ -2,6 +2,8 @@ import { useCallback } from "react";
 import { ChatMessage } from "../../../interfaces/models/ChatMessage";
 import useAxiosPrivate from "../../../config/useAxiosPrivate";
 import useProject from "../../projects/useProject";
+import { SpaceReputationContextParams } from "../../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../../utils/spaceReputationParams";
 
 export interface MessageFilters {
   /**
@@ -12,7 +14,7 @@ export interface MessageFilters {
   hasReplies?: boolean;
 }
 
-export interface FetchManyChatMessagesProps {
+export interface FetchManyChatMessagesProps extends SpaceReputationContextParams {
   conversationId: string;
   /** Restrict to replies of this message (thread view). */
   parentId?: string | null;
@@ -26,13 +28,6 @@ export interface FetchManyChatMessagesProps {
   /** When `true`, the server populates the `files` field on each message. */
   includeFiles?: boolean;
   filters?: MessageFilters;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface FetchManyChatMessagesResponse {
@@ -72,6 +67,7 @@ function useFetchManyChatMessages(): (
         sort,
         includeFiles,
         filters,
+        spaceReputation,
         spaceReputationId,
         spaceReputationDescendants,
       } = props;
@@ -79,15 +75,20 @@ function useFetchManyChatMessages(): (
       if (!projectId) throw new Error("No project specified");
       if (!conversationId) throw new Error("No conversation specified");
 
-      const params: Record<string, any> = { limit };
+      const params: Record<string, any> = {
+        limit,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
+      };
       if (sort) params.sort = sort;
       if (parentId) params.parentId = parentId;
       if (before) params.before = before;
       if (after) params.after = after;
       if (includeFiles) params.include = "files";
       if (filters) params.filters = filters;
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       const response = await axios.get<FetchManyChatMessagesResponse>(
         `/${projectId}/chat/conversations/${conversationId}/messages`,

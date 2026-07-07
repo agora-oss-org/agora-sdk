@@ -13,8 +13,10 @@ import { Mention } from "../../../interfaces/models/Mention";
 import useAxiosPrivate from "../../../config/useAxiosPrivate";
 import useProject from "../../projects/useProject";
 import { handleError } from "../../../utils/handleError";
+import { SpaceReputationContextParams } from "../../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../../utils/spaceReputationParams";
 
-export interface SendMessageParams {
+export interface SendMessageParams extends SpaceReputationContextParams {
   content?: string;
   gif?: GifData;
   mentions?: Mention[];
@@ -22,17 +24,6 @@ export interface SendMessageParams {
   quotedMessageId?: string | null;
   parentMessageId?: string | null;
   files?: File[];
-  /**
-   * Opt into `spaceReputation` on the enriched sender returned in the response.
-   * Accepted forms: a space `<uuid>`, `"none"`, or `"context"`. Sent as a query
-   * param so it works for both the JSON and multipart request shapes.
-   */
-  spaceReputationId?: string;
-  /**
-   * Include reputation accrued in descendant spaces. Only honored when
-   * `spaceReputationId` is an explicit `<uuid>`.
-   */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseSendMessageProps {
@@ -60,17 +51,18 @@ function useSendMessage({
       quotedMessageId,
       parentMessageId,
       files,
+      spaceReputation,
       spaceReputationId,
       spaceReputationDescendants,
     }: SendMessageParams): Promise<ChatMessage> => {
       if (!projectId) throw new Error("No projectId available.");
       if (!conversationId) throw new Error("No conversationId provided.");
 
-      const reputationParams: Record<string, any> = {};
-      if (spaceReputationId !== undefined)
-        reputationParams.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined)
-        reputationParams.spaceReputationDescendants = spaceReputationDescendants;
+      const reputationParams = buildSpaceReputationParams({
+        spaceReputation,
+        spaceReputationId,
+        spaceReputationDescendants,
+      });
 
       const localId = crypto.randomUUID();
       const now = new Date().toISOString();

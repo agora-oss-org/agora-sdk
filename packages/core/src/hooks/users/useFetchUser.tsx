@@ -3,18 +3,12 @@ import { useCallback } from "react";
 import useProject from "../projects/useProject";
 import axios from "../../config/axios";
 import { User, UserIncludeParam } from "../../interfaces/models/User";
+import { SpaceReputationUserParams } from "../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../utils/spaceReputationParams";
 
-export interface FetchUserProps {
+export interface FetchUserProps extends SpaceReputationUserParams {
   userId: string;
   include?: UserIncludeParam;
-  /**
-   * Opt into `spaceReputation` on the returned user. Accepted forms: a space
-   * `<uuid>` or `"none"`. `"context"` is rejected by the server (400) on this
-   * bare user lookup — there is no row context to derive a space from.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 function useFetchUser(): (props: FetchUserProps) => Promise<User> {
@@ -24,6 +18,7 @@ function useFetchUser(): (props: FetchUserProps) => Promise<User> {
     async ({
       userId,
       include,
+      spaceReputation,
       spaceReputationId,
       spaceReputationDescendants,
     }: FetchUserProps) => {
@@ -37,9 +32,12 @@ function useFetchUser(): (props: FetchUserProps) => Promise<User> {
 
       const params: Record<string, any> = {
         include: Array.isArray(include) ? include.join(",") : include,
+        ...buildSpaceReputationParams({
+          spaceReputation,
+          spaceReputationId,
+          spaceReputationDescendants,
+        }),
       };
-      if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-      if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
 
       const response = await axios.get(`/${projectId}/users/${userId}`, {
         params,

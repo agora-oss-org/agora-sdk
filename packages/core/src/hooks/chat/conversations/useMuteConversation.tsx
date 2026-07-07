@@ -1,0 +1,67 @@
+import { useCallback } from "react";
+import useProject from "../../projects/useProject";
+import { useUser } from "../../user";
+import { useMuteConversationMutation } from "../../../store/api/notificationPreferencesApi";
+import { handleError } from "../../../utils/handleError";
+import type { MuteDuration } from "../../../interfaces/MuteDuration";
+import type { ConversationMember } from "../../../interfaces/models/ConversationMember";
+
+export interface MuteConversationProps {
+  conversationId: string;
+  /**
+   * The duration CHOICE (`8h` / `24h` / `1w` / `forever`), or `null` to clear
+   * the mute. Never a raw timestamp — the server resolves the choice and
+   * represents "forever" via the returned member's explicit `mutedForever`
+   * signal.
+   */
+  duration: MuteDuration | null;
+}
+
+export interface UseMuteConversationValues {
+  /**
+   * Set or clear the acting user's mute on a conversation. Resolves to the
+   * updated (self-serialized) `currentMember` — read `mutedForever` /
+   * `mutedUntil` off it for the resulting state.
+   */
+  muteConversation: (props: MuteConversationProps) => Promise<ConversationMember>;
+  muting: boolean;
+}
+
+/**
+ * Set / clear the acting user's conversation mute. Mirrors the server's
+ * `POST /:projectId/chat/conversations/:conversationId/mute` exactly.
+ */
+function useMuteConversation(): UseMuteConversationValues {
+  const { projectId } = useProject();
+  const { user } = useUser();
+  const [muteMutation, { isLoading: muting }] = useMuteConversationMutation();
+
+  const muteConversation = useCallback(
+    async ({
+      conversationId,
+      duration,
+    }: MuteConversationProps): Promise<ConversationMember> => {
+      if (!projectId || !user) {
+        throw new Error("No project ID or authenticated user available");
+      }
+      if (!conversationId) throw new Error("Please pass a conversationId.");
+
+      try {
+        const { currentMember } = await muteMutation({
+          projectId,
+          conversationId,
+          duration,
+        }).unwrap();
+        return currentMember;
+      } catch (err) {
+        handleError(err, "Failed to mute conversation");
+        throw err;
+      }
+    },
+    [projectId, user, muteMutation]
+  );
+
+  return { muteConversation, muting };
+}
+
+export default useMuteConversation;

@@ -21,3 +21,13 @@ export type {
 
 export { default as useAskContent } from "./useAskContent";
 export type { UseAskContentProps, UseAskContentReturn } from "./useAskContent";
+
+export { default as useMatchUsers } from "./useMatchUsers";
+export type {
+  UseMatchUsersProps,
+  UseMatchUsersReturn,
+  UserMatchResult,
+  MatchedFacet,
+  MatchFacetRef,
+  SampleContent,
+} from "./useMatchUsers";

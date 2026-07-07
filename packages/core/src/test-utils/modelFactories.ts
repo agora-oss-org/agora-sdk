@@ -131,6 +131,7 @@ export function makeSpace(overrides: Partial<Space> = {}): Space {
     userId: "user-1",
     readingPermission: "anyone",
     postingPermission: "anyone",
+    visibility: "public",
     requireJoinApproval: false,
     parentSpaceId: null,
     depth: 0,

@@ -68,6 +68,42 @@ describe("useAskContent", () => {
     expect(JSON.parse(init.body)).toMatchObject({ query: "What is this about?" });
   });
 
+  it("forwards spaceId + includeChildSpaces in the request body", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeStreamResponse([sse("done", {})]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHookWithAxios(() => useAskContent());
+
+    act(() => {
+      result.current.ask({ query: "hello", spaceId: "space-1", includeChildSpaces: true });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(init.body)).toMatchObject({
+      query: "hello",
+      spaceId: "space-1",
+      includeChildSpaces: true,
+    });
+  });
+
+  it("opts react-native-fetch-api into incremental streaming via reactNative.textStreaming", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(makeStreamResponse([sse("done", {})]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { result } = renderHookWithAxios(() => useAskContent());
+
+    act(() => {
+      result.current.ask({ query: "hello" });
+    });
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.reactNative).toEqual({ textStreaming: true });
+  });
+
   it("attaches an Authorization header when an access token is present", async () => {
     const fetchMock = vi.fn().mockResolvedValue(makeStreamResponse([sse("done", {})]));
     vi.stubGlobal("fetch", fetchMock);

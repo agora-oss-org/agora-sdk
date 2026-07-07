@@ -16,5 +16,8 @@ export * from "./tablesApi";
 // Export push notifications API
 export * from "./pushApi";
 
+// Export notification preferences + conversation mute API
+export * from "./notificationPreferencesApi";
+
 // Future API exports will go here:
 // export * from "./commentsApi";

@@ -16,6 +16,7 @@ interface CreateSpaceParams {
   banner?: string | null;
   readingPermission?: "anyone" | "members";
   postingPermission?: "anyone" | "members" | "admins";
+  visibility?: "public" | "unlisted" | "private";
   requireJoinApproval?: boolean;
   metadata?: Record<string, any>;
   parentSpaceId?: string | null;
@@ -61,6 +62,7 @@ interface UpdateSpaceParams {
     banner: string | null;
     readingPermission: "anyone" | "members";
     postingPermission: "anyone" | "members" | "admins";
+    visibility: "public" | "unlisted" | "private";
     requireJoinApproval: boolean;
     metadata: Record<string, any>;
   }>;

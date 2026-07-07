@@ -3,16 +3,11 @@ import { ConversationMember } from "../../../interfaces/models/ConversationMembe
 import useAxiosPrivate from "../../../config/useAxiosPrivate";
 import useProject from "../../projects/useProject";
 import { handleError } from "../../../utils/handleError";
+import { SpaceReputationContextParams } from "../../../interfaces/SpaceReputation";
+import { buildSpaceReputationParams } from "../../../utils/spaceReputationParams";
 
-export interface UseConversationMembersProps {
+export interface UseConversationMembersProps extends SpaceReputationContextParams {
   conversationId: string;
-  /**
-   * Opt into per-row `spaceReputation` on embedded users. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseConversationMembersValues {
@@ -30,11 +25,19 @@ export interface UseConversationMembersValues {
 
 function useConversationMembers({
   conversationId,
+  spaceReputation,
   spaceReputationId,
   spaceReputationDescendants,
 }: UseConversationMembersProps): UseConversationMembersValues {
   const { projectId } = useProject();
   const axios = useAxiosPrivate();
+
+  const reputationParams = buildSpaceReputationParams({
+    spaceReputation,
+    spaceReputationId,
+    spaceReputationDescendants,
+  });
+  const reputationKey = JSON.stringify(reputationParams);
 
   const [members, setMembers] = useState<ConversationMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,9 +48,7 @@ function useConversationMembers({
     const fetch = async () => {
       setLoading(true);
       try {
-        const params: Record<string, any> = { limit: 100 };
-        if (spaceReputationId !== undefined) params.spaceReputationId = spaceReputationId;
-        if (spaceReputationDescendants !== undefined) params.spaceReputationDescendants = spaceReputationDescendants;
+        const params: Record<string, any> = { limit: 100, ...reputationParams };
         const response = await axios.get(
           `/${projectId}/chat/conversations/${conversationId}/members`,
           { params }
@@ -61,7 +62,7 @@ function useConversationMembers({
     };
 
     fetch();
-  }, [projectId, conversationId, spaceReputationId, spaceReputationDescendants]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [projectId, conversationId, reputationKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const addMember = useCallback(
     async ({ userId }: { userId: string }) => {

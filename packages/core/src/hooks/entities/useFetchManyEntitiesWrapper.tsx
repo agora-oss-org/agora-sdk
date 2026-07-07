@@ -10,8 +10,9 @@ import { LocationFilters } from "../../interfaces/entity-filters/LocationFilters
 import { MetadataFilters } from "../../interfaces/entity-filters/MetadataFilters";
 import useFetchManyEntities from "./useFetchManyEntities";
 import { handleError } from "../../utils/handleError";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface UseFetchManyEntitiesWrapperProps {
+export interface UseFetchManyEntitiesWrapperProps extends SpaceReputationContextParams {
   userId?: string | null;
   limit?: number;
   sourceId?: string | null;
@@ -29,13 +30,6 @@ export interface UseFetchManyEntitiesWrapperProps {
   attachmentsFilters?: AttachmentsFilters | null;
   locationFilters?: LocationFilters | null;
   metadataFilters?: MetadataFilters | null;
-  /**
-   * Opt into per-row `spaceReputation` on embedded authors. Accepted forms: a
-   * space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseFetchManyEntitiesWrapperValues {
@@ -74,9 +68,16 @@ function useFetchManyEntitiesWrapper(
     attachmentsFilters,
     locationFilters,
     metadataFilters,
+    spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
   } = props;
+
+  // Forwarded to the leaf fetcher, which flattens it via
+  // buildSpaceReputationParams before it reaches the serializer.
+  const reputation = { spaceReputation, spaceReputationId, spaceReputationDescendants };
+  const reputationKey = JSON.stringify(reputation);
+
   const fetchManyEntities = useFetchManyEntities();
 
   const loading = useRef(true);
@@ -121,8 +122,7 @@ function useFetchManyEntitiesWrapper(
         attachmentsFilters,
         locationFilters,
         metadataFilters,
-        spaceReputationId,
-        spaceReputationDescendants,
+        ...reputation,
       });
 
       if (response) {
@@ -156,9 +156,8 @@ function useFetchManyEntitiesWrapper(
     attachmentsFilters,
     locationFilters,
     metadataFilters,
-    spaceReputationId,
-    spaceReputationDescendants,
-  ]);
+    reputationKey,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = () => {
     if (loading.current || !hasMore.current) return;
@@ -196,8 +195,7 @@ function useFetchManyEntitiesWrapper(
           attachmentsFilters,
           locationFilters,
           metadataFilters,
-          spaceReputationId,
-          spaceReputationDescendants,
+          ...reputation,
         });
 
         if (response) {
@@ -238,9 +236,8 @@ function useFetchManyEntitiesWrapper(
     attachmentsFilters,
     locationFilters,
     metadataFilters,
-    spaceReputationId,
-    spaceReputationDescendants,
-  ]);
+    reputationKey,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     entities,

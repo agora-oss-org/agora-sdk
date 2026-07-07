@@ -4,8 +4,9 @@ import { handleError } from "../../../utils/handleError";
 import useFetchManyChatMessages, {
   MessageFilters,
 } from "./useFetchManyChatMessages";
+import { SpaceReputationContextParams } from "../../../interfaces/SpaceReputation";
 
-export interface UseFetchManyChatMessagesWrapperProps {
+export interface UseFetchManyChatMessagesWrapperProps extends SpaceReputationContextParams {
   conversationId: string;
   /** Restrict to replies of this message (thread view). */
   parentId?: string | null;
@@ -20,13 +21,6 @@ export interface UseFetchManyChatMessagesWrapperProps {
   /** When `true`, the server populates the `files` field on each message. */
   includeFiles?: boolean;
   filters?: MessageFilters;
-  /**
-   * Opt into per-row `spaceReputation` on embedded message authors. Accepted
-   * forms: a space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseFetchManyChatMessagesWrapperValues {
@@ -55,9 +49,15 @@ function useFetchManyChatMessagesWrapper(
     sort = "desc",
     includeFiles,
     filters,
+    spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
   } = props;
+
+  // Forwarded to the leaf fetcher, which flattens it via
+  // buildSpaceReputationParams before it reaches the serializer.
+  const reputation = { spaceReputation, spaceReputationId, spaceReputationDescendants };
+  const reputationKey = JSON.stringify(reputation);
 
   const fetchMany = useFetchManyChatMessages();
 
@@ -96,8 +96,7 @@ function useFetchManyChatMessagesWrapper(
         sort,
         includeFiles,
         filters,
-        spaceReputationId,
-        spaceReputationDescendants,
+        ...reputation,
       });
       setMessages(res.messages);
       hasMoreRef.current = res.hasMore;
@@ -110,7 +109,7 @@ function useFetchManyChatMessagesWrapper(
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, filtersKey, spaceReputationId, spaceReputationDescendants, advanceCursor]);
+  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, filtersKey, reputationKey, advanceCursor]);
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current || !hasMoreRef.current || !cursorRef.current) return;
@@ -124,8 +123,7 @@ function useFetchManyChatMessagesWrapper(
         sort,
         includeFiles,
         filters,
-        spaceReputationId,
-        spaceReputationDescendants,
+        ...reputation,
         ...(sort === "asc"
           ? { after: cursorRef.current }
           : { before: cursorRef.current }),
@@ -141,7 +139,7 @@ function useFetchManyChatMessagesWrapper(
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, filtersKey, spaceReputationId, spaceReputationDescendants, advanceCursor]);
+  }, [fetchMany, conversationId, parentId, limit, sort, includeFiles, filtersKey, reputationKey, advanceCursor]);
 
   useEffect(() => {
     refetch();

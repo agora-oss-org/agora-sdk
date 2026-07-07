@@ -3,8 +3,9 @@ import { CommentsSortByOptions } from "../../interfaces/CommentsSortByOptions";
 import { Comment, CommentIncludeParam } from "../../interfaces/models/Comment";
 import useFetchManyComments from "./useFetchManyComments";
 import { handleError } from "../../utils/handleError";
+import { SpaceReputationContextParams } from "../../interfaces/SpaceReputation";
 
-export interface UseFetchManyCommentsWrapperProps {
+export interface UseFetchManyCommentsWrapperProps extends SpaceReputationContextParams {
   entityId?: string | null;
   userId?: string | null;
   parentId?: string | null;
@@ -14,13 +15,6 @@ export interface UseFetchManyCommentsWrapperProps {
   defaultSortBy?: CommentsSortByOptions;
   /** Initial sort direction for `sortBy: "createdAt"`. Defaults to `"desc"`. */
   defaultSortDir?: "asc" | "desc";
-  /**
-   * Opt into per-row `spaceReputation` on embedded comment authors. Accepted
-   * forms: a space `<uuid>`, `"none"`, or `"context"`.
-   */
-  spaceReputationId?: string;
-  /** Only honored with an explicit `<uuid>` `spaceReputationId`. */
-  spaceReputationDescendants?: boolean;
 }
 
 export interface UseFetchManyCommentsWrapperValues {
@@ -47,9 +41,16 @@ function useFetchManyCommentsWrapper(
     defaultSortBy = "createdAt",
     defaultSortDir = "desc",
     include,
+    spaceReputation,
     spaceReputationId,
     spaceReputationDescendants,
   } = props;
+
+  // Forwarded to the leaf fetcher, which flattens it via
+  // buildSpaceReputationParams before it reaches the serializer.
+  const reputation = { spaceReputation, spaceReputationId, spaceReputationDescendants };
+  const reputationKey = JSON.stringify(reputation);
+
   const fetchManyComments = useFetchManyComments();
 
   const loading = useRef(true);
@@ -87,8 +88,7 @@ function useFetchManyCommentsWrapper(
         sortDir,
         limit,
         include,
-        spaceReputationId,
-        spaceReputationDescendants,
+        ...reputation,
       });
 
       if (response) {
@@ -113,9 +113,8 @@ function useFetchManyCommentsWrapper(
     parentId,
     sourceId,
     include,
-    spaceReputationId,
-    spaceReputationDescendants,
-  ]);
+    reputationKey,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadMore = () => {
     if (loading.current || !hasMore.current) return;
@@ -144,8 +143,7 @@ function useFetchManyCommentsWrapper(
           sortDir,
           limit,
           include,
-          spaceReputationId,
-          spaceReputationDescendants,
+          ...reputation,
         });
 
         if (response) {
@@ -177,9 +175,8 @@ function useFetchManyCommentsWrapper(
     sortDir,
     limit,
     include,
-    spaceReputationId,
-    spaceReputationDescendants,
-  ]);
+    reputationKey,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     comments,
