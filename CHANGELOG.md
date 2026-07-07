@@ -13,19 +13,37 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ### Added
 - **Synced upstream feature work through v7.8.2** (`@sublay/* → @agora-sdk/*` and `Sublay*` →
-  `Replyke*` identifiers via `rename-to-agora.sh`). New capabilities in `@agora-sdk/*`:
-  **notification preferences** (`useNotificationPreferences` + `notificationPreferencesApi`, with the
-  `PushEventType` interface) and **conversation muting** (`useMuteConversation` + the `MuteDuration`
-  interface and new `ConversationMember` mute fields) rounding out the push bundle; **space
-  visibility** exposed on `useCreateSpace`/`useUpdateSpace` (and the `Space` model + `spacesApi`);
-  **user matching** search (`useMatchUsers` + `UserSearch` interface); and a **space-reputation
-  parameter consolidation** — upstream extracted a shared `SpaceReputationContextParams` /
-  `buildSpaceReputationParams` (now re-exported from `@agora-sdk/core`) and threaded a unified
-  `spaceReputation` object through every fetch hook (entities, comments, reactions, relationships,
-  users, chat, `useAskContent`/`useSearchContent`), deprecating the flat
-  `spaceReputationId`/`spaceReputationDescendants` scalars (still honored, with a one-time warning).
-  `useAskContent` also gained upstream's `reactNative.textStreaming` fetch init for incremental
-  streaming on RN.
+  `Replyke*` identifiers via `rename-to-agora.sh`). Seven upstream PRs (#38–#44), all additive and
+  backward-compatible. New capabilities in `@agora-sdk/*`:
+  - **Notification preferences** (PR #44) — `useNotificationPreferences` + `notificationPreferencesApi`
+    with the `PushEventType` interface (the authoritative 20-value `PUSH_EVENT_TYPES` set). Read/replace
+    the acting user's opted-out push types via `GET`/`PUT /:projectId/push-notifications/preferences`.
+  - **Conversation muting** (PR #44) — `useMuteConversation` + the `MuteDuration` interface
+    (`"8h"`/`"24h"`/`"1w"`/`"forever"`) and new `ConversationMember` mute fields (`mutedUntil`,
+    `mutedForever`, self-serialized on the viewer's own row).
+    `POST /:projectId/chat/conversations/:id/mute`.
+  - **Space visibility** (PR #43) — `visibility` (`"public"`/`"unlisted"`/`"private"`) exposed on
+    `useCreateSpace`/`useUpdateSpace` and the `Space`/`SpacePreview` models.
+  - **Follows/connections text search** (PR #42) — the follower/following/connection list hooks accept
+    `query` + `searchFields` (`"username"`/`"name"`) via the shared `UserSearchParams` interface.
+  - **User matching** (PR #41) — `useMatchUsers` (activity/interest matching) + `UserMatchResult` /
+    `MatchedFacet` / `SampleContent` types. `POST /:projectId/match/users`.
+  - **Search `includeChildSpaces`** (PR #38) — `useAskContent`/`useSearchContent` can search a space's
+    whole descendant subtree.
+  - **`useAskContent` RN token streaming** (PR #40) — the answer streams token-by-token on React
+    Native via a `reactNative.textStreaming` fetch init (ignored by web `fetch`).
+  - **Space-reputation parameter consolidation** (PR #39) — a shared `SpaceReputationContextParams` /
+    `SpaceReputationUserParams` + `buildSpaceReputationParams` helper (now re-exported from
+    `@agora-sdk/core`), threaded through every fetch hook (entities, comments, reactions,
+    relationships, users, chat, search) so a unified `spaceReputation: { spaceId, includeDescendants? }`
+    object supersedes the flat `spaceReputationId`/`spaceReputationDescendants` scalars (still honored,
+    with a one-time dev warning when both are supplied).
+- **Server-side spec for the new/changed endpoints:** `../agora-server/docs/SDK-V7.8.2-SERVER-SPEC.md`
+  documents the client contracts this sync introduces and which the Agora server must implement
+  (notification-preferences and conversation-mute routes, space `visibility`, follows/connections
+  `searchFields`, `POST /match/users`, and the `spaceReputation` enrichment param), with the current
+  server state and backward-compat notes per feature. Mirrors `SDK-EMAIL-REDIRECT-TO-SPEC.md`
+  (divergence #6).
 
 ### Changed
 - **Two merge conflicts resolved, both keeping our divergence + taking upstream's improvement**
