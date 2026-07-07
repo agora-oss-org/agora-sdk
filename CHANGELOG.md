@@ -11,6 +11,8 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-07-07
+
 ### Added
 - **Synced upstream feature work through v7.8.2** (`@sublay/* → @agora-sdk/*` and `Sublay*` →
   `Replyke*` identifiers via `rename-to-agora.sh`). Seven upstream PRs (#38–#44), all additive and
@@ -345,7 +347,12 @@ are folded in here).
   server) is replayed and the server's reuse-detection revokes the token family.
   Clears on a storage reset. Not patched, to keep the fork cleanly mergeable upstream.
 
-[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.4.0...agora
+[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.8.0...agora
+[1.8.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.6.0...v1.7.0
+[1.6.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.5.1...v1.6.0
+[1.5.1]: https://github.com/jenova-marie/agora-sdk/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/jenova-marie/agora-sdk/releases/tag/v1.2.2
