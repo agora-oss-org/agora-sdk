@@ -1,12 +1,19 @@
 // Modified from the original @replyke/core source.
 // Modifications Copyright 2026 Jenova Marie — sign-out now always clears local auth
 // state even if the server revoke fails, signUpWithEmailAndPassword returns a
-// SignUpResult instead of void to surface the email-confirmation flow, and sign-up
-// sends `emailRedirectTo` so confirmation links return to the originating front-end.
+// SignUpResult instead of void to surface the email-confirmation flow, sign-up
+// sends `emailRedirectTo` so confirmation links return to the originating front-end,
+// and initializeAuthThunk wires the auth transport (divergence #8): it registers the
+// access-token getter + shared refresher and releases the boot latch in `finally`.
 // Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../config/axios";
-import { getEmailRedirectTo } from "../../config/runtime";
+import {
+  getEmailRedirectTo,
+  registerAccessTokenGetter,
+  registerTokenRefresher,
+  markAuthSettled,
+} from "../../config/runtime";
 
 import { handleError } from "../../utils/handleError";
 import type { RootState } from "../index";
@@ -543,8 +550,23 @@ export const initializeAuthThunk = createAsyncThunk(
   "auth/initialize",
   async (
     data: { projectId: string; signedToken?: string | null },
-    { dispatch }
+    { dispatch, getState }
   ) => {
+    // Agora divergence #8: register the transport callbacks HERE — this thunk runs in both
+    // standard mode (ReplykeProvider) and integration mode (consumer-owned store), with the
+    // live store's getState/dispatch and the projectId in scope, before the boot latch opens.
+    registerAccessTokenGetter(
+      () => (getState() as RootState).replyke.auth.accessToken
+    );
+    registerTokenRefresher(async () => {
+      const result = await dispatch(
+        requestNewAccessTokenThunk({ projectId: data.projectId })
+      );
+      return requestNewAccessTokenThunk.fulfilled.match(result)
+        ? (result.payload as string | undefined)
+        : undefined;
+    });
+
     try {
       // Step 1: If we have a signed token, verify external user
       if (data.signedToken) {
@@ -564,6 +586,8 @@ export const initializeAuthThunk = createAsyncThunk(
       handleError(error, "Auth initialization failed:");
     } finally {
       dispatch(setInitialized(true));
+      // Agora divergence #8: release the boot latch — parked content requests may now fly.
+      markAuthSettled();
     }
   }
 );

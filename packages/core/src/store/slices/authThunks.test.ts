@@ -13,6 +13,13 @@ import { setTokens, setUser } from "./authSlice";
 import { setAccountMap } from "./accountsSlice";
 import { selectUser as selectUserSliceUser } from "./userSlice";
 import type { AuthUser } from "../../interfaces/models/User";
+import {
+  getAccessToken,
+  hasTokenRefresher,
+  refreshAccessToken,
+  whenAuthSettled,
+  armAuthLatch,
+} from "../../config/runtime";
 
 afterEach(() => {
   resetAxiosMocks();
@@ -299,5 +306,58 @@ describe("initializeAuthThunk", () => {
     expect(store.getState().replyke.auth.initialized).toBe(true);
     const urls = axios.calls("post").map((c) => c.url);
     expect(urls).toEqual(["/project-1/auth/request-new-access-token"]);
+  });
+});
+
+describe("initializeAuthThunk — transport wiring (divergence #8)", () => {
+  it("registers the access-token getter against the live store", async () => {
+    const store = makeReplykeStore();
+    mockAxiosPublic();
+
+    await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    expect(getAccessToken()).toBeNull();
+    store.dispatch(setTokens({ accessToken: "access-9", refreshToken: "refresh-9" }));
+    expect(getAccessToken()).toBe("access-9");
+  });
+
+  it("registers a refresher that resolves undefined when signed out", async () => {
+    const store = makeReplykeStore();
+    mockAxiosPublic();
+
+    await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    expect(hasTokenRefresher()).toBe(true);
+    await expect(refreshAccessToken()).resolves.toBeUndefined();
+  });
+
+  it("registers a refresher that exchanges the refresh token and updates the store", async () => {
+    const store = makeReplykeStore();
+    const axios = mockAxiosPublic();
+
+    await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    store.dispatch(setTokens({ accessToken: "stale", refreshToken: "refresh-1" }));
+    axios.mockResponse("post", {
+      accessToken: "fresh",
+      refreshToken: "refresh-2",
+      user: { id: "user-1" },
+    });
+
+    await expect(refreshAccessToken()).resolves.toBe("fresh");
+    expect(store.getState().replyke.auth.accessToken).toBe("fresh");
+    expect(axios.calls("post")[0].url).toBe("/project-1/auth/request-new-access-token");
+  });
+
+  it("releases the boot latch even when the boot refresh fails", async () => {
+    armAuthLatch();
+    const store = makeReplykeStore();
+    const axios = mockAxiosPublic();
+    store.dispatch(setTokens({ accessToken: null, refreshToken: "refresh-1" }));
+    axios.mockError("post", 500);
+
+    await store.dispatch(initializeAuthThunk({ projectId: "project-1" }));
+
+    await expect(whenAuthSettled()).resolves.toBeUndefined();
   });
 });
