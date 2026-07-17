@@ -1,3 +1,7 @@
+// Modified from the original @replyke/core source.
+// Modifications Copyright 2026 Jenova Marie — arms the auth boot latch during render (divergence #8).
+// Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
+
 import React, { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useReplykeDispatch, useReplykeSelector } from "../store/hooks";
@@ -9,7 +13,7 @@ import {
 import { selectInitialized } from "../store/slices/authSlice";
 import { ReplykeContext } from "./replyke-context";
 import useProjectData from "../hooks/projects/useProjectData";
-import { setApiBaseUrl } from "../config/runtime";
+import { setApiBaseUrl, armAuthLatch } from "../config/runtime";
 
 export interface ReplykeIntegrationProviderProps {
   children: ReactNode;
@@ -105,6 +109,10 @@ export const ReplykeIntegrationProvider: React.FC<ReplykeIntegrationProviderProp
   signedToken,
   baseUrl,
 }) => {
+  // Agora divergence #8: arm the auth boot latch during render — parents render before children,
+  // so this beats any child hook's first request effect. initializeAuthThunk releases it.
+  armAuthLatch();
+
   // Set the runtime base URL during render, before any hook fires a request.
   setApiBaseUrl(baseUrl);
 
