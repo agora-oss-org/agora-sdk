@@ -134,7 +134,9 @@ upstream's improvements painless.
    every hook at once.
    - `core/src/config/runtime.ts`: auth transport registry — access-token getter, token
      refresher, process-wide single-flight refresh mutex, and a boot latch
-     (`armAuthLatch`/`markAuthSettled`/`whenAuthSettled`, default open).
+     (`armAuthLatch`/`markAuthSettled`/`whenAuthSettled`, default open). The getter/refresher are a
+     module-singleton rebound on every `initializeAuthThunk`, so two providers with different
+     `projectId`s on one page implicitly share one refresher — last to initialize wins for both.
    - `core/src/config/axios.ts`: module-level `withAuthTransport` on **both** instances —
      attaches the store token, parks non-`/auth/` requests on the boot latch, retries once
      through the shared refresh on 401. `/auth/` URLs are exempt from the **latch** (the boot

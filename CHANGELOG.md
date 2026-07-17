@@ -11,6 +11,17 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Fixed
+- **Boot latch could deadlock in integration mode (divergence #8)** — `ReplykeIntegrationProvider`
+  armed the auth boot latch unconditionally during render, but its `AuthInitializer` skips
+  dispatching `initializeAuthThunk` (and thus its `finally` that releases the latch) whenever auth
+  is already initialized at mount (e.g. an OAuth callback or redux-persist rehydration that set
+  `initialized: true` before the provider ever rendered). Every non-`/auth/` request would then
+  park on `whenAuthSettled()` forever. `AuthInitializer` now releases the latch itself on that
+  terminal skip path. Also: `ReplykeProvider`'s missing-`projectId` guard now runs before it arms
+  the latch, so a misconfigured app doesn't leave the latch armed with nothing left to release it.
+  See SYNCING.md #8.
+
 ### Changed
 - **All reads now require a JWT (divergence #8)** — the Agora server hides all content behind a
   bearer token (upstream Replyke serves reads publicly), so the SDK now handles auth at the
@@ -23,7 +34,8 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   when signed out. `/auth/*` requests skip the latch and the 401-refresh but **do** carry the
   token, which also fixes `changePassword` and the account-deletion flows — they call `requireAuth`
   routes through the tokenless public instance and had been returning 401. The project-config
-  bootstrap fetch stays unauthenticated. No public API changes; apps gate UI on the existing
+  bootstrap stays on the server's anonymous allowlist, though the SDK still attaches a token when
+  one is available. No public API changes; apps gate UI on the existing
   `useAuth()` state. See SYNCING.md #8 and
   `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
 
