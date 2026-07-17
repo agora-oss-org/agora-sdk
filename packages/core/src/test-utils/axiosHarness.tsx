@@ -15,6 +15,7 @@ import type {
 } from "axios";
 
 import axiosPublic, { axiosPrivate } from "../config/axios";
+import { __resetAuthTransportForTests } from "../config/runtime";
 import { replykeReducers } from "../store/replykeReducers";
 import { setTokens, setUser, setInitialized } from "../store/slices/authSlice";
 import {
@@ -151,6 +152,7 @@ export const axiosErrorWithStatus = toAxiosError;
  * cases/files if not reset.
  */
 export function resetAxiosMocks(): void {
+  __resetAuthTransportForTests();
   vi.restoreAllMocks();
   axiosPrivate.interceptors.request.clear();
   axiosPrivate.interceptors.response.clear();
