@@ -24,9 +24,13 @@ const withRuntimeBaseUrl = (instance: ReturnType<typeof axios.create>) => {
   return instance;
 };
 
-// /auth/ requests are exempt from the latch AND the 401-refresh: the boot refresh itself flows
-// through the public instance BEFORE the latch resolves (gating it would deadlock the SDK), and
-// a failed sign-in's 401 must never trigger a refresh.
+// /auth/ requests are exempt from the latch AND the 401-refresh, but DO still carry the token
+// when one is available: the boot refresh itself flows through the public instance BEFORE the
+// latch resolves (gating it would deadlock the SDK), a failed sign-in's 401 must never trigger a
+// refresh, and authed auth routes (change-password, request/confirm-account-deletion) require
+// `requireAuth` server-side, so they still need the bearer header. Known limitation: because the
+// response-side guard below stays a blanket /auth/ match, those authed routes get the token but
+// not refresh-and-retry on 401 — an expired token at call time surfaces to the caller as-is.
 const isAuthPath = (url: string | undefined): boolean => (url ?? "").includes("/auth/");
 
 /** Agora divergence #8 — token attach + boot latch + reactive 401 refresh, at module level so
@@ -34,8 +38,7 @@ const isAuthPath = (url: string | undefined): boolean => (url ?? "").includes("/
  *  Exported for tests. */
 export const withAuthTransport = (instance: ReturnType<typeof axios.create>) => {
   instance.interceptors.request.use(async (config) => {
-    if (isAuthPath(config.url)) return config;
-    await whenAuthSettled();
+    if (!isAuthPath(config.url)) await whenAuthSettled();
     if (!config.headers["Authorization"]) {
       const token = getAccessToken();
       if (token) config.headers["Authorization"] = `Bearer ${token}`;

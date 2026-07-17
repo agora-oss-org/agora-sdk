@@ -99,14 +99,14 @@ describe("withAuthTransport (divergence #8)", () => {
     expect(adapter.mock.calls[0][0].headers.Authorization).toBe("Bearer explicit");
   });
 
-  it("never attaches the token to /auth/ requests", async () => {
+  it("attaches the token to authed /auth/ routes (change-password et al)", async () => {
     registerAccessTokenGetter(() => "store-token");
     const adapter = okAdapter();
     const instance = makeInstance(adapter);
 
-    await instance.post("/project-1/auth/sign-in", {});
+    await instance.post("/project-1/auth/change-password", {});
 
-    expect(adapter.mock.calls[0][0].headers.Authorization).toBeUndefined();
+    expect(adapter.mock.calls[0][0].headers.Authorization).toBe("Bearer store-token");
   });
 
   it("parks non-auth requests on the armed latch while /auth/ requests fly (deadlock guard)", async () => {
@@ -124,6 +124,18 @@ describe("withAuthTransport (divergence #8)", () => {
     markAuthSettled();
     await parked;
     expect(adapter).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not park an /auth/ request on an armed latch, and still attaches the token (change-password during boot)", async () => {
+    armAuthLatch();
+    registerAccessTokenGetter(() => "store-token");
+    const adapter = okAdapter();
+    const instance = makeInstance(adapter);
+
+    await instance.post("/project-1/auth/change-password", {});
+
+    expect(adapter).toHaveBeenCalledTimes(1);
+    expect(adapter.mock.calls[0][0].headers.Authorization).toBe("Bearer store-token");
   });
 
   it("refreshes once and retries with the new token on 401", async () => {
