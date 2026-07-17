@@ -124,13 +124,32 @@ upstream's improvements painless.
    carrying unmarked). The Agora server requires a valid JWT on **all content routes** (hard
    sign-in wall — upstream Replyke serves reads publicly); its anonymous surface is just the
    pre-sign-in door (`/auth/*`, the OAuth entry points, and the `/projects/lean` provider
-   bootstrap). Upstream would never take this — they *want* public reads — so every line here is
-   permanent fork. Spec: `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
+   bootstrap). Spec: `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
+
+   **Why upstream serves reads publicly — and why we never will.** Replyke's product is the
+   embeddable comment section: a reader lands on a blog, reads the discussion, and decides whether
+   to join. Anonymous reading *is* their value proposition — which is why ~14 read hooks use the
+   tokenless public instance, and why the server treats a garbage token as anonymous rather than
+   rejecting it. None of that is an oversight to be tidied up; it's load-bearing for them.
+
+   Agora is a private community, by design. No anonymous reading of anything — entities, spaces,
+   comments, reactions, profiles, follower lists. No SEO, no link previews, no reading before you
+   have an account. That is the product, not a cost it pays. (Lurking is fine — make an account and
+   lurk all you like. What's excluded is the anonymous reader, not the passive one.)
+   **This divergence is permanent and must never be "fixed" toward upstream.** At every sync
+   upstream's version will look simpler, cleaner, and more correct; taking it would silently make
+   the whole platform public. If reads should ever open up for some surface, that decision belongs
+   in the *server's* `AUTH_WALL_ALLOWLIST`, not here — the SDK just sends the token; the server
+   decides who may read without one.
 
    Why it's at the transport layer rather than per-hook: ~14 read hooks use the **public** axios
    instance, which never sent an `Authorization` header. Under the auth wall they'd 401 *even for
    signed-in users*. Migrating them to `useAxiosPrivate` would have created 14 new permanently-
-   diverged files paid for on every sync; six shared transport files (five already diverged) cover
+   diverged files paid for on every sync. It's also **safe against upstream drift**: anonymous
+   reading being core to Replyke means upstream will keep *adding* public-instance read hooks, and
+   every one lands under these interceptors automatically. Per-hook migration would import a new
+   untokened hook on every sync — a bug that only surfaces in production. Six shared transport
+   files (five already diverged) cover
    every hook at once.
    - `core/src/config/runtime.ts`: auth transport registry — access-token getter, token
      refresher, process-wide single-flight refresh mutex, and a boot latch

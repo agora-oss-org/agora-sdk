@@ -11,34 +11,40 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
-### Fixed
-- **Boot latch could deadlock in integration mode (divergence #8)** — `ReplykeIntegrationProvider`
-  armed the auth boot latch unconditionally during render, but its `AuthInitializer` skips
-  dispatching `initializeAuthThunk` (and thus its `finally` that releases the latch) whenever auth
-  is already initialized at mount (e.g. an OAuth callback or redux-persist rehydration that set
-  `initialized: true` before the provider ever rendered). Every non-`/auth/` request would then
-  park on `whenAuthSettled()` forever. `AuthInitializer` now releases the latch itself on that
-  terminal skip path. Also: both providers now arm the latch only after their missing-`projectId`
-  guard (an explicit throw in `ReplykeProvider`, `useProjectData` in `ReplykeIntegrationProvider`),
-  so a misconfigured app doesn't leave the latch armed with nothing left to release it.
-  See SYNCING.md #8.
-
 ### Changed
-- **All reads now require a JWT (divergence #8)** — the Agora server hides all content behind a
-  bearer token (upstream Replyke serves reads publicly), so the SDK now handles auth at the
-  transport layer: both axios instances attach the current access token (covering the ~14 read
-  hooks that used the tokenless public instance and previously broke even for signed-in users),
-  boot-time requests park on an auth latch until the stored session is restored (fixes a
-  first-paint 401 race), all 401 handlers share one single-flight refresh (concurrent 401s can no
-  longer race refresh-token rotation into the server's reuse-detection), RTK Query gains a
-  401 → refresh → retry path it never had, and `useAxiosPrivate` no longer sends `"Bearer null"`
-  when signed out. `/auth/*` requests skip the latch and the 401-refresh but **do** carry the
-  token, which also fixes `changePassword` and the account-deletion flows — they call `requireAuth`
-  routes through the tokenless public instance and had been returning 401. The project-config
-  bootstrap stays on the server's anonymous allowlist, though the SDK still attaches a token when
-  one is available. No public API changes; apps gate UI on the existing
-  `useAuth()` state. See SYNCING.md #8 and
-  `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
+- **BREAKING — signed-out users can no longer read anything (divergence #8).** Agora is a private
+  community by design: every content route requires a valid JWT. There is no anonymous reading of
+  entities, spaces, comments, reactions, profiles, or follower lists — and therefore no SEO, no
+  link previews, and no reading before you have an account. (Lurking is fine; make an account and
+  lurk all you like. What's excluded is the anonymous reader, not the passive one.) Upstream
+  Replyke serves reads publicly — anonymous comment-viewing is their product — so this is a
+  permanent, deliberate fork. **If your app shows content to logged-out visitors, it will go dark
+  on this upgrade.** Apps gate UI on the existing `useAuth()` state; there are no API signature
+  changes, which is exactly why this is a major rather than a minor — the contract changed even
+  though the types didn't.
+
+  **Server requirement:** this needs an Agora server with the auth wall (`authWall` mounted
+  group-wide, `AUTH_WALL_ALLOWLIST` defining the anonymous surface). Against an older server that
+  still mounts `optionalAuth`, the SDK is backward-compatible and inert — it attaches tokens the
+  server simply ignores, and reads stay public until the server side lands.
+
+  To make it work, auth moved into the shared transport rather than into the ~14 read hooks that
+  used the tokenless public instance (those broke even for *signed-in* users, since they sent no
+  `Authorization` header at all):
+  - Both axios instances now attach the current access token, and RTK Query gained a
+    401 → refresh → retry path it never had.
+  - Boot-time requests park on an auth latch until the stored session is restored, fixing a
+    first-paint 401 race for returning users.
+  - All 401 handlers share one single-flight refresh, so concurrent 401s can no longer race
+    refresh-token rotation into the server's reuse-detection.
+  - `useAxiosPrivate` no longer sends `"Bearer null"` when signed out.
+  - `/auth/*` requests skip the latch and the 401-refresh but **do** carry the token — which also
+    fixes `changePassword`, `requestAccountDeletion`, and `confirmAccountDeletion`: they call
+    `requireAuth` routes through the tokenless public instance and had been returning 401.
+  - The project-config bootstrap stays on the server's anonymous allowlist, though the SDK still
+    attaches a token when one is available.
+
+  See SYNCING.md #8 and `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
 
 ## [1.8.0] - 2026-07-07
 
