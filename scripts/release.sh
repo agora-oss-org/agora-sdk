@@ -60,15 +60,29 @@ git add \
 git commit -m "🔖 chore(release): $TAG"
 git tag -a "$TAG" -m "Release $TAG"
 
-# Push the branch + tag to every mirror that exists. `upstream` is our GitHub fork
-# (github.com/jenova-marie/agora-sdk) where publish.yml runs — the tag MUST reach it to
-# trigger the npm publish; `origin` is the private git.rso mirror.
-for remote in origin upstream; do
+# Push the branch + tag to every mirror that exists. The GitHub fork
+# (github.com/jenova-marie/agora-sdk) is where publish.yml runs — the tag MUST reach it to
+# trigger the npm publish. That fork has been named both `github` and `upstream` over time, so
+# try both; `origin` is the private git.rso mirror.
+PUSHED_GITHUB=0
+for remote in origin github upstream; do
   if git remote get-url "$remote" >/dev/null 2>&1; then
     echo "→ Pushing $BRANCH and $TAG to $remote"
     git push "$remote" "$BRANCH"
     git push "$remote" "$TAG"
+    case "$(git remote get-url "$remote")" in *github.com*) PUSHED_GITHUB=1 ;; esac
   fi
 done
+
+# Fail loudly rather than reporting success on a release that will never publish: without the
+# tag on GitHub, publish.yml never fires and no npm release or GitHub Release is created.
+if [ "$PUSHED_GITHUB" -eq 0 ]; then
+  echo "Error: $TAG was committed and tagged locally, but no github.com remote exists, so the" >&2
+  echo "tag never reached GitHub — publish.yml will NOT run and nothing will be published." >&2
+  echo "Add the fork remote and push the tag by hand:" >&2
+  echo "  git remote add github git@github.com:jenova-marie/agora-sdk.git" >&2
+  echo "  git push github $BRANCH && git push github $TAG" >&2
+  exit 1
+fi
 
 echo "✓ Released $TAG. GitHub Actions (publish.yml) will build & publish to npm."
