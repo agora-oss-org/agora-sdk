@@ -4,14 +4,16 @@
 // Upstream Replyke refreshes on 403, but the Agora server reserves 403 for genuine authorization
 // denials (members-only spaces, ownership/operator gates); 401 means "credentials expired",
 // which is the correct, spec-compliant trigger for a token refresh (RFC 9110 / RFC 6750).
+// Divergence #8 additions: no "Bearer null" header when signed out (the Agora server 401s
+// garbage tokens instead of treating them as anonymous), and the reactive refresh routes
+// through the shared single-flight in config/runtime.ts so this handler, the module-level
+// one in config/axios.ts, and RTK Query can never race concurrent refresh-token rotations.
 // Licensed under the Apache License, Version 2.0. See the LICENSE and NOTICE files.
 import { useEffect } from "react";
 import type { AxiosInstance } from "axios";
 import { axiosPrivate } from "./axios";
 import { useAuth } from "../hooks/auth";
-
-// Module-level mutex: prevents concurrent token rotations from racing
-let refreshPromise: Promise<string | undefined> | null = null;
+import { refreshAccessToken } from "./runtime";
 
 const useAxiosPrivate = (): AxiosInstance => {
   const { accessToken, requestNewAccessToken } = useAuth();
@@ -20,7 +22,7 @@ const useAxiosPrivate = (): AxiosInstance => {
     const requestIntercept = axiosPrivate.interceptors.request.use(
       (config) => {
         if (config.headers["Authorization"]) return config;
-        config.headers["Authorization"] = `Bearer ${accessToken}`;
+        if (accessToken) config.headers["Authorization"] = `Bearer ${accessToken}`;
         return config;
       },
       (error) => Promise.reject(error)
@@ -36,14 +38,10 @@ const useAxiosPrivate = (): AxiosInstance => {
         if (error?.response?.status === 401 && !prevRequest?.sent) {
           prevRequest.sent = true;
 
-          // Use mutex to prevent concurrent rotation races
-          if (!refreshPromise) {
-            refreshPromise = requestNewAccessToken?.()?.finally(() => {
-              refreshPromise = null;
-            }) ?? Promise.resolve(undefined);
-          }
-
-          const newAccessToken = await refreshPromise;
+          // Shared single-flight (config/runtime.ts): one refresh at a time process-wide.
+          const newAccessToken = await refreshAccessToken(
+            () => requestNewAccessToken?.() ?? Promise.resolve(undefined)
+          );
 
           if (!newAccessToken) {
             return Promise.reject(error);

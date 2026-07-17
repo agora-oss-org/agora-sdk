@@ -127,4 +127,22 @@ describe("useAxiosPrivate", () => {
     await axiosPrivate.get("/y");
     expect(adapter.mock.calls[1][0].headers.Authorization).toBeUndefined();
   });
+
+  it("does not attach a garbage header when signed out (accessToken null)", async () => {
+    mockedUseAuth.mockReturnValue({
+      accessToken: null,
+      requestNewAccessToken: vi.fn(),
+    } as never);
+    const adapter = vi.fn(async (config: InternalAxiosRequestConfig) =>
+      okAxiosResponse({ ok: true }, 200, config),
+    );
+    stubAxiosAdapter(axiosPrivate, adapter);
+
+    renderHook(() => useAxiosPrivate());
+    await axiosPrivate.get("/x");
+
+    // Agora divergence (#8): upstream sent "Bearer null" here and relied on the server
+    // treating an invalid token as anonymous. The Agora server 401s garbage tokens.
+    expect(adapter.mock.calls[0][0].headers.Authorization).toBeUndefined();
+  });
 });
