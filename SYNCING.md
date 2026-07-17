@@ -155,15 +155,17 @@ upstream's improvements painless.
    - `core/src/store/api/baseApi.ts`: `dynamicBaseQuery` parks on the latch and retries once on
      401 (RTK Query previously had no reactive refresh).
 
-   Server counterpart (**already shipped**, not pending): the Agora server replaced its group-wide
-   `optionalAuth` with an `authWall` middleware — private by default, fail closed, mounted at
-   `apps/api/src/routes/index.ts` (`project.use("*", resolveProject, authWall)`). Its
-   `AUTH_WALL_ALLOWLIST` (`packages/core/src/middleware/auth.ts`) is the API's entire anonymous
-   surface: the `/auth/` prefix plus `/oauth/authorize`, `/oauth/callback`, `/projects/lean`,
+   Server counterpart: the Agora server replaces its group-wide `optionalAuth` with an `authWall`
+   middleware — private by default, fail closed, mounted at `apps/api/src/routes/index.ts`
+   (`project.use("*", resolveProject, authWall)`). Its `AUTH_WALL_ALLOWLIST`
+   (`packages/core/src/middleware/auth.ts`) is the API's entire anonymous surface: the `/auth/`
+   prefix plus `/oauth/authorize`, `/oauth/callback`, `/projects/lean`,
    `/push-notifications/vapid-public-key`, and a dev-only signing stub. Note the wall allowlists
    `/auth/` wholesale, but its **authed members keep their inner `requireAuth`** — which is exactly
-   why the SDK sends the token to `/auth/` routes (see the `axios.ts` bullet above). Server design:
-   `docs/superpowers/specs/2026-07-17-auth-wall-private-by-default-design.md` in the server repo.
+   why the SDK sends the token to `/auth/` routes (see the `axios.ts` bullet above). As of this
+   writing that server work lives on the agora-server repo's `feat/auth-wall` branch (not yet
+   merged into `root`) — server design: `docs/superpowers/specs/2026-07-17-auth-wall-private-by-
+   default-design.md` in the server repo.
 
    **Don't drop the interceptors when merging upstream** — upstream will keep assuming public reads,
    and nothing in their code will look wrong. The failure mode is silent: reads simply 401.
