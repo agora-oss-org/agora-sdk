@@ -11,6 +11,8 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-17
+
 ### Changed
 - **BREAKING — signed-out users can no longer read anything (divergence #8).** Agora is a private
   community by design: every content route requires a valid JWT. There is no anonymous reading of
@@ -382,7 +384,8 @@ are folded in here).
   server) is replayed and the server's reuse-detection revokes the token family.
   Clears on a storage reset. Not patched, to keep the fork cleanly mergeable upstream.
 
-[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v1.8.0...agora
+[Unreleased]: https://github.com/jenova-marie/agora-sdk/compare/v2.0.0...agora
+[2.0.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.8.0...v2.0.0
 [1.8.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/jenova-marie/agora-sdk/compare/v1.5.1...v1.6.0
