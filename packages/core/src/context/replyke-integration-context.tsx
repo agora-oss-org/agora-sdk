@@ -115,15 +115,18 @@ export const ReplykeIntegrationProvider: React.FC<ReplykeIntegrationProviderProp
   signedToken,
   baseUrl,
 }) => {
-  // Agora divergence #8: arm the auth boot latch during render — parents render before children,
-  // so this beats any child hook's first request effect. initializeAuthThunk releases it.
-  armAuthLatch();
-
   // Set the runtime base URL during render, before any hook fires a request.
   setApiBaseUrl(baseUrl);
 
   // Provide projectId via context so hooks can access it
   const data = useProjectData({ projectId });
+
+  // Agora divergence #8: arm the auth boot latch during render — parents render before children,
+  // so this beats any child hook's first request effect. initializeAuthThunk releases it (or
+  // AuthInitializer's terminal-skip path below). Must come after useProjectData, which is this
+  // provider's projectId guard — arming before it would wedge the latch on a misconfigured app,
+  // with nothing left alive to release it. (ReplykeProvider guards explicitly for the same reason.)
+  armAuthLatch();
 
   // No Redux Provider here - user provides their own
   return (

@@ -18,8 +18,9 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
   is already initialized at mount (e.g. an OAuth callback or redux-persist rehydration that set
   `initialized: true` before the provider ever rendered). Every non-`/auth/` request would then
   park on `whenAuthSettled()` forever. `AuthInitializer` now releases the latch itself on that
-  terminal skip path. Also: `ReplykeProvider`'s missing-`projectId` guard now runs before it arms
-  the latch, so a misconfigured app doesn't leave the latch armed with nothing left to release it.
+  terminal skip path. Also: both providers now arm the latch only after their missing-`projectId`
+  guard (an explicit throw in `ReplykeProvider`, `useProjectData` in `ReplykeIntegrationProvider`),
+  so a misconfigured app doesn't leave the latch armed with nothing left to release it.
   See SYNCING.md #8.
 
 ### Changed
