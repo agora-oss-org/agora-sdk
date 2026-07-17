@@ -13,7 +13,7 @@ import {
 import { selectInitialized } from "../store/slices/authSlice";
 import { ReplykeContext } from "./replyke-context";
 import useProjectData from "../hooks/projects/useProjectData";
-import { setApiBaseUrl, armAuthLatch } from "../config/runtime";
+import { setApiBaseUrl, armAuthLatch, markAuthSettled } from "../config/runtime";
 
 export interface ReplykeIntegrationProviderProps {
   children: ReactNode;
@@ -44,8 +44,14 @@ const AuthInitializer: React.FC<{
   }, []);
 
   useEffect(() => {
-    // Auth already bootstrapped (e.g. by OAuth callback) — skip
-    if (initialized) return;
+    // Auth already bootstrapped (e.g. by OAuth callback, or redux-persist rehydration) — skip
+    // dispatching initializeAuthThunk. But skipping the thunk also skips its `finally`, which is
+    // the ONLY place that releases the boot latch (armAuthLatch() ran unconditionally during this
+    // provider's render) — so release it here too, or every parked content request hangs forever.
+    if (initialized) {
+      markAuthSettled();
+      return;
+    }
 
     // Still waiting for the microtask check
     if (!hasWaitedForManager) return;

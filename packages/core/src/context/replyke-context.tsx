@@ -32,17 +32,19 @@ export const ReplykeProvider: React.FC<ReplykeContextProps> = ({
   baseUrl,
   children,
 }: ReplykeContextProps) => {
+  if (!projectId)
+    throw new Error("projectId in ReplykeProvider is " + typeof projectId);
+
   // Set the runtime base URL during render so it's in place before useProjectData's effect (and
   // every other hook) fires its first request. Idempotent module-singleton set.
   setApiBaseUrl(baseUrl);
   // Agora divergence #8: arm the auth boot latch during render — parents render before children,
-  // so this beats any child hook's first request effect. initializeAuthThunk releases it.
+  // so this beats any child hook's first request effect. initializeAuthThunk releases it. Must
+  // come after the projectId guard above — arming before a throw would wedge the latch with
+  // nothing left alive to release it.
   armAuthLatch();
 
   const data = useProjectData({ projectId });
-
-  if (!projectId)
-    throw new Error("projectId in ReplykeProvider is " + typeof projectId);
 
   return (
     <ReplykeContext.Provider value={data}>

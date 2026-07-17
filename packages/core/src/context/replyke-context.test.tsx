@@ -16,7 +16,7 @@ describe("ReplykeProvider", () => {
           <div />
         </ReplykeProvider>,
       ),
-    ).toThrow("Please pass a project ID");
+    ).toThrow("projectId in ReplykeProvider is string");
 
     consoleSpy.mockRestore();
   });
