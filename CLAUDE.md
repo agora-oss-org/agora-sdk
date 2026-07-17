@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Agora is a fork of [replyke/monorepo](https://github.com/replyke/monorepo), rescoped to
 `@agora-sdk/*` and repointed at an [Agora server](https://github.com/jenova-marie/agora). The
 fork's entire value is that its divergence from upstream is **tiny and documented**, which keeps
-upstream merges cheap. Before editing, understand the branch model and the seven divergences —
+upstream merges cheap. Before editing, understand the branch model and the eight divergences —
 full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Branches:**
@@ -17,7 +17,7 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
 | `main` | Mirrors `upstream/main` **verbatim** — original `@replyke/*` names, **no edits**. Never commit fork work here. |
 | `agora` | The working branch and repo default. `@agora-sdk/*` scope + the Agora changes. All work and PRs land here. |
 
-**The only things that diverge from upstream — keep edits within these, don't add new fork points (seven total):**
+**The only things that diverge from upstream — keep edits within these, don't add new fork points (eight total):**
 
 1. **Base-URL repoint** (4 files: `core/src/utils/env.ts`, `core/src/config/axios.ts`,
    `core/src/context/chat-context.tsx`, `core/src/hooks/auth/oauthCore.ts` — the OAuth helper
@@ -64,6 +64,19 @@ full detail is in [SYNCING.md](SYNCING.md); contributor-facing rules are in [CON
    entries alias their own AccountManager-injecting `ReplykeProvider` override, shadowing core's
    alias. Do **not** move this into `rename-to-agora.sh` — it's committed code (like the base-URL
    repoint), not a mechanical re-scope. See SYNCING.md #7.
+8. **JWT-required reads / transport-layer auth** (7 files, 5 already diverged): the Agora server
+   requires a JWT on **all content routes** (hard sign-in wall; upstream serves reads publicly), so
+   auth lives in the shared transport rather than in hooks — ~14 read hooks use the tokenless public
+   instance and would 401 even for signed-in users, and migrating them would mean 14 new diverged
+   files. `config/runtime.ts` gains a token-getter/refresher registry + a process-wide single-flight
+   refresh + a boot latch (default open); `config/axios.ts` attaches the token and retries 401s once
+   on **both** instances; `initializeAuthThunk` registers the callbacks and releases the latch in
+   `finally` (covers standard AND integration mode); both providers arm the latch during render
+   (parents render before children — never move this into an effect); `useAxiosPrivate` drops
+   `"Bearer null"` and shares the single-flight; `baseApi` parks on the latch and retries once on
+   401. `/auth/` URLs are exempt from the latch and the 401-refresh (deadlock + failed-sign-in
+   guards) but **still carry the token** — the server puts `requireAuth` on `/auth/change-password`
+   and the account-deletion routes. See SYNCING.md #8.
 
 The auth files (#3) are the likely merge-conflict spots if upstream refactors auth — re-apply by
 hand, preserve upstream's surrounding logic, and keep the headers.

@@ -14,7 +14,7 @@ upstream's improvements painless.
 | **`main`** | mirrors `upstream/main` verbatim — **keep upstream's names (now `@sublay/*`, formerly `@replyke/*`), no edits** |
 | **`agora`** | our working branch — `@agora-sdk/*` scope + the base-URL repoint. Pushed to `origin` + `github`. |
 
-## What diverges from upstream (seven things)
+## What diverges from upstream (eight things)
 
 1. **Base-URL repoint** — committed code on `agora`, 4 files:
    `core/src/utils/env.ts` (`getApiBaseUrl()` default), `core/src/config/axios.ts`
@@ -118,6 +118,56 @@ upstream's improvements painless.
    mechanical scope/identifier re-scope of upstream's names. On merge, these EOF/append blocks are
    very unlikely to conflict; if upstream restructures the entry files, re-apply the aliases by hand.
 
+8. **JWT-required reads (transport-layer auth)** — hand edits in 7 files (the five transport/auth
+   files already carried §4(b) headers, extended; the two provider files are newly marked —
+   `replyke-context.tsx`'s new header also retroactively covers divergence #1, which it had been
+   carrying unmarked). The Agora server requires a valid JWT on **all content routes** (hard
+   sign-in wall — upstream Replyke serves reads publicly); its anonymous surface is just the
+   pre-sign-in door (`/auth/*`, the OAuth entry points, and the `/projects/lean` provider
+   bootstrap). Upstream would never take this — they *want* public reads — so every line here is
+   permanent fork. Spec: `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
+
+   Why it's at the transport layer rather than per-hook: ~14 read hooks use the **public** axios
+   instance, which never sent an `Authorization` header. Under the auth wall they'd 401 *even for
+   signed-in users*. Migrating them to `useAxiosPrivate` would have created 14 new permanently-
+   diverged files paid for on every sync; six shared transport files (five already diverged) cover
+   every hook at once.
+   - `core/src/config/runtime.ts`: auth transport registry — access-token getter, token
+     refresher, process-wide single-flight refresh mutex, and a boot latch
+     (`armAuthLatch`/`markAuthSettled`/`whenAuthSettled`, default open).
+   - `core/src/config/axios.ts`: module-level `withAuthTransport` on **both** instances —
+     attaches the store token, parks non-`/auth/` requests on the boot latch, retries once
+     through the shared refresh on 401. `/auth/` URLs are exempt from the **latch** (the boot
+     refresh flows through the public instance before the latch resolves — gating it deadlocks
+     the SDK) and from the **401-refresh** (a failed sign-in's 401 must never trigger a refresh),
+     but they still **carry the token**: the server puts `requireAuth` on `/auth/change-password`,
+     `/auth/request-account-deletion`, and `/auth/confirm-account-deletion`, which the SDK calls
+     through the tokenless public instance (they 401'd before this change). Known limitation:
+     because the 401-refresh guard stays a blanket `/auth/` match, those authed auth routes get
+     the token but not refresh-and-retry — an expired token at call time surfaces the 401.
+   - `core/src/store/slices/authThunks.ts`: `initializeAuthThunk` registers the getter/refresher
+     (covers standard AND integration mode) and releases the latch in `finally`.
+   - `core/src/context/replyke-context.tsx` + `core/src/context/replyke-integration-context.tsx`:
+     arm the latch during render (parents render before children ⇒ beats any child fetch effect).
+   - `core/src/config/useAxiosPrivate.ts`: no more `"Bearer null"` when signed out; its reactive
+     refresh routes through the shared single-flight (the per-request `sent` flag is shared with
+     the module-level handler so a 401 is retried at most once).
+   - `core/src/store/api/baseApi.ts`: `dynamicBaseQuery` parks on the latch and retries once on
+     401 (RTK Query previously had no reactive refresh).
+
+   Server counterpart (**already shipped**, not pending): the Agora server replaced its group-wide
+   `optionalAuth` with an `authWall` middleware — private by default, fail closed, mounted at
+   `apps/api/src/routes/index.ts` (`project.use("*", resolveProject, authWall)`). Its
+   `AUTH_WALL_ALLOWLIST` (`packages/core/src/middleware/auth.ts`) is the API's entire anonymous
+   surface: the `/auth/` prefix plus `/oauth/authorize`, `/oauth/callback`, `/projects/lean`,
+   `/push-notifications/vapid-public-key`, and a dev-only signing stub. Note the wall allowlists
+   `/auth/` wholesale, but its **authed members keep their inner `requireAuth`** — which is exactly
+   why the SDK sends the token to `/auth/` routes (see the `axios.ts` bullet above). Server design:
+   `docs/superpowers/specs/2026-07-17-auth-wall-private-by-default-design.md` in the server repo.
+
+   **Don't drop the interceptors when merging upstream** — upstream will keep assuming public reads,
+   and nothing in their code will look wrong. The failure mode is silent: reads simply 401.
+
 ### Previously diverged, now dissolved into upstream
 
 These were tracked divergences that upstream later implemented independently; on the sync that
@@ -172,8 +222,11 @@ Git only conflicts when **both** sides change the **same lines**. Upstream never
 `@agora-sdk` rename (they use `@sublay`, formerly `@replyke`), so the rename almost never conflicts
 — and when a new `@sublay` (or legacy `@replyke`) reference or `Sublay*` identifier arrives from
 upstream, step 3 converts it deterministically. The real review surface each sync is the 4
-base-URL files plus the 2 auth-flow files (divergence #3) and `EntityListSortByOptions.ts`
-(divergence #5) — keep those edits surgical and syncing remains a few minutes of work.
+base-URL files plus the 2 auth-flow files (divergence #3), `EntityListSortByOptions.ts`
+(divergence #5), and the transport files (divergence #8: `runtime.ts`, `axios.ts`,
+`useAxiosPrivate.ts`, `baseApi.ts`) — keep those edits surgical and syncing remains a few minutes
+of work. Of the #8 files only `useAxiosPrivate.ts` holds much upstream code; `axios.ts` is 9 lines
+upstream and effectively all ours, so upstream can rarely conflict with its internals.
 
 Each sync may also require adapting a handful of merged-in upstream **test fixtures** — because
 agora runs `tsc` over tests (upstream uses vitest/esbuild, which skips typechecking) and because

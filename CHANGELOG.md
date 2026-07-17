@@ -11,6 +11,22 @@ describe how the `@agora-sdk/*` packages diverge from upstream. See
 
 ## [Unreleased]
 
+### Changed
+- **All reads now require a JWT (divergence #8)** — the Agora server hides all content behind a
+  bearer token (upstream Replyke serves reads publicly), so the SDK now handles auth at the
+  transport layer: both axios instances attach the current access token (covering the ~14 read
+  hooks that used the tokenless public instance and previously broke even for signed-in users),
+  boot-time requests park on an auth latch until the stored session is restored (fixes a
+  first-paint 401 race), all 401 handlers share one single-flight refresh (concurrent 401s can no
+  longer race refresh-token rotation into the server's reuse-detection), RTK Query gains a
+  401 → refresh → retry path it never had, and `useAxiosPrivate` no longer sends `"Bearer null"`
+  when signed out. `/auth/*` requests skip the latch and the 401-refresh but **do** carry the
+  token, which also fixes `changePassword` and the account-deletion flows — they call `requireAuth`
+  routes through the tokenless public instance and had been returning 401. The project-config
+  bootstrap fetch stays unauthenticated. No public API changes; apps gate UI on the existing
+  `useAuth()` state. See SYNCING.md #8 and
+  `docs/superpowers/specs/2026-07-17-jwt-required-reads-design.md`.
+
 ## [1.8.0] - 2026-07-07
 
 ### Added
