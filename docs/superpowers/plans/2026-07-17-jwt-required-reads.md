@@ -1263,7 +1263,14 @@ Change the heading `## What diverges from upstream (seven things)` to `(eight th
      (`armAuthLatch`/`markAuthSettled`/`whenAuthSettled`, default open).
    - `core/src/config/axios.ts`: module-level `withAuthTransport` on **both** instances —
      attaches the store token, parks non-`/auth/` requests on the boot latch, retries once
-     through the shared refresh on 401. `/auth/` URLs are exempt (deadlock + sign-in-401 guard).
+     through the shared refresh on 401. `/auth/` URLs are exempt from the **latch** (the boot
+     refresh flows through the public instance before the latch resolves — gating it deadlocks
+     the SDK) and from the **401-refresh** (a failed sign-in's 401 must never trigger a refresh),
+     but they still **carry the token**: the server puts `requireAuth` on `/auth/change-password`,
+     `/auth/request-account-deletion`, and `/auth/confirm-account-deletion`, which the SDK calls
+     through the tokenless public instance (they 401'd before this change). Known limitation:
+     because the 401-refresh guard stays a blanket `/auth/` match, those authed auth routes get
+     the token but not refresh-and-retry — an expired token at call time surfaces the 401.
    - `core/src/store/slices/authThunks.ts`: `initializeAuthThunk` registers the getter/refresher
      (covers standard AND integration mode) and releases the latch in `finally`.
    - `core/src/context/replyke-context.tsx` + `core/src/context/replyke-integration-context.tsx`:
@@ -1292,7 +1299,9 @@ Also extend the "Why this stays cheap" paragraph's review-surface sentence to me
    requires a JWT on all content routes (hard sign-in wall; upstream serves reads publicly).
    `config/runtime.ts` gains a token-getter/refresher registry + single-flight refresh + boot
    latch; `config/axios.ts` attaches the token and retries 401s once on **both** instances
-   (`/auth/` URLs exempt); `initializeAuthThunk` registers the callbacks and releases the latch;
+   (`/auth/` URLs are exempt from the latch and the 401-refresh, but still carry the token —
+   `change-password` and the account-deletion routes require it server-side);
+   `initializeAuthThunk` registers the callbacks and releases the latch;
    both providers arm the latch during render; `useAxiosPrivate` drops `"Bearer null"` and shares
    the single-flight; `baseApi` parks on the latch and retries once on 401. See SYNCING.md #8.
 ```
